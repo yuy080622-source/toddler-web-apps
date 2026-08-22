@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#bcecff">
+  <meta name="description" content="大きなシャボン玉をタッチして、やさしい音と光を楽しむ幼児向けWebアプリです。">
+  <title>シャボン玉タッチ</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="app" id="app">
+    <div class="sky-decorations" aria-hidden="true">
+      <span class="cloud cloud--one"></span>
+      <span class="cloud cloud--two"></span>
+      <span class="glow glow--one"></span>
+      <span class="glow glow--two"></span>
+      <span class="glow glow--three"></span>
+    </div>
+
+    <header class="app-header">
+      <div class="heading-group">
+        <p class="eyebrow">ふわふわ ぷかぷか</p>
+        <h1>シャボン玉をタッチ！</h1>
+      </div>
+
+      <button class="sound-button" id="soundButton" type="button"
+        aria-label="音をオフにする" aria-pressed="true">
+        <span class="sound-icon" id="soundIcon" aria-hidden="true">🔊</span>
+        <span class="sound-label">おと</span>
+      </button>
+    </header>
+
+    <section class="play-area" id="playArea" aria-label="シャボン玉の遊び場">
+      <div class="guide" id="guide" aria-hidden="true">
+        <span class="guide-hand">👆</span>
+        <p>シャボン玉を<br>タッチしてね！</p>
+      </div>
+    </section>
+
+    <footer class="app-footer">
+      <p class="count" id="count" aria-live="polite" aria-atomic="true">シャボン玉を タッチ！</p>
+    </footer>
+  </main>
+
+  <script src="js/script.js" defer></script>
+</body>
+</html>

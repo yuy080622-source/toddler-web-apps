@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#fff1e5">
+  <title>くだものポン！</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app" aria-label="くだものポン！">
+    <header class="header">
+      <h1>くだものを<br class="small-break"> タッチしてね</h1>
+      <button id="soundButton" class="sound-button" type="button" aria-pressed="true" aria-label="音声をオフにする">
+        <span class="sound-icon" aria-hidden="true">🔊</span>
+        <span class="sound-label">おと</span>
+      </button>
+    </header>
+
+    <section class="play-area" aria-live="polite">
+      <div id="effectLayer" class="effect-layer" aria-hidden="true"></div>
+      <button id="fruitButton" class="fruit-button" type="button" aria-label="りんご。タッチすると音と動きが出ます">
+        <img id="fruitImage" class="fruit-image" alt="" draggable="false">
+        <span id="fruitEmoji" class="fruit-emoji" aria-hidden="true">🍎</span>
+      </button>
+      <div id="popName" class="pop-name" aria-hidden="true">りんご！</div>
+      <p id="fruitName" class="fruit-name">りんご</p>
+    </section>
+
+    <nav class="navigation" aria-label="くだものの切り替え">
+      <button id="prevButton" class="nav-button" type="button">← <span>まえ</span></button>
+      <div id="pageDots" class="page-dots" aria-hidden="true"></div>
+      <button id="nextButton" class="nav-button" type="button"><span>つぎ</span> →</button>
+    </nav>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

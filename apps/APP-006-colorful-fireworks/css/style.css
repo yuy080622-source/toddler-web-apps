@@ -1,0 +1,306 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-synthesis: none;
+  --white: #fffdf8;
+  --soft-blue: #c9e8ff;
+  --soft-purple: #d9d2ff;
+  --glass: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body {
+  background: #0b1236;
+}
+
+button {
+  font: inherit;
+}
+
+.app {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--white);
+  outline: none;
+  background:
+    radial-gradient(circle at 52% 44%, rgba(77, 69, 151, 0.23), transparent 38%),
+    linear-gradient(165deg, #101944 0%, #11123c 52%, #22123f 100%);
+}
+
+#fireworksCanvas {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stars {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 250, 210, 0.8);
+  box-shadow: 0 0 7px rgba(255, 245, 180, 0.45);
+}
+
+.star-1 { top: 18%; left: 13%; }
+.star-2 { top: 28%; left: 79%; width: 2px; height: 2px; }
+.star-3 { top: 43%; left: 8%; width: 2px; height: 2px; }
+.star-4 { top: 62%; left: 88%; }
+.star-5 { top: 73%; left: 20%; width: 2px; height: 2px; }
+.star-6 { top: 84%; left: 72%; width: 2px; height: 2px; }
+.star-7 { top: 12%; left: 62%; width: 2px; height: 2px; }
+.star-8 { top: 52%; left: 68%; width: 2px; height: 2px; }
+
+.top-bar,
+.guide,
+.error-message {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.top-bar {
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  padding: calc(18px + env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left));
+}
+
+.title-area {
+  padding-top: 3px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.eyebrow {
+  margin: 0 0 3px;
+  color: var(--soft-blue);
+  font-size: clamp(0.78rem, 3.5vw, 1rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.55rem, 7vw, 2.35rem);
+  line-height: 1.16;
+  letter-spacing: 0.04em;
+}
+
+.sound-button {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  flex: 0 0 auto;
+  width: 68px;
+  height: 68px;
+  padding: 5px 0 4px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: var(--white);
+  background: rgba(32, 38, 91, 0.78);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.12);
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.sound-button[aria-pressed="false"] {
+  color: var(--soft-purple);
+  background: rgba(24, 27, 64, 0.88);
+  border-color: rgba(207, 199, 255, 0.2);
+}
+
+.sound-button:active {
+  transform: scale(0.92);
+}
+
+.sound-button:focus-visible {
+  outline: 4px solid rgba(255, 234, 143, 0.9);
+  outline-offset: 4px;
+}
+
+.sound-icon {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.sound-label {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.guide {
+  top: 50%;
+  left: 50%;
+  width: min(88vw, 420px);
+  padding: 26px 18px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 30px;
+  text-align: center;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(213, 204, 255, 0.06));
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.14), inset 0 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(5px);
+  transform: translate(-50%, -47%);
+  transition: opacity 450ms ease, transform 450ms ease, visibility 450ms;
+}
+
+.guide.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -44%) scale(0.97);
+}
+
+.touch-picture {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 10px;
+}
+
+.touch-hand {
+  position: absolute;
+  right: 4px;
+  bottom: 0;
+  font-size: 3.3rem;
+  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.25));
+  animation: gentle-touch 1.8s ease-in-out infinite;
+}
+
+.touch-ring {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  width: 42px;
+  height: 42px;
+  border: 3px solid rgba(255, 224, 130, 0.72);
+  border-radius: 50%;
+  opacity: 0;
+  animation: soft-ring 1.8s ease-out infinite;
+}
+
+.guide-main {
+  margin: 0;
+  font-size: clamp(1.18rem, 5vw, 1.55rem);
+  font-weight: 800;
+  line-height: 1.55;
+  letter-spacing: 0.05em;
+}
+
+.guide-sub {
+  margin: 6px 0 0;
+  color: var(--soft-purple);
+  font-size: clamp(0.83rem, 3.6vw, 1rem);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.error-message {
+  top: 50%;
+  left: 50%;
+  width: min(84vw, 360px);
+  margin: 0;
+  padding: 18px;
+  border-radius: 20px;
+  text-align: center;
+  background: rgba(28, 26, 69, 0.94);
+  transform: translate(-50%, -50%);
+}
+
+@keyframes gentle-touch {
+  0%, 100% { transform: translate(0, 2px) rotate(-4deg); }
+  48% { transform: translate(-7px, -6px) rotate(-4deg); }
+  64% { transform: translate(-7px, -6px) scale(0.96) rotate(-4deg); }
+}
+
+@keyframes soft-ring {
+  34% { opacity: 0; transform: scale(0.5); }
+  58% { opacity: 0.65; }
+  82%, 100% { opacity: 0; transform: scale(1.35); }
+}
+
+@media (min-width: 480px) {
+  .small-screen-break { display: none; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .top-bar {
+    padding-top: calc(10px + env(safe-area-inset-top));
+  }
+
+  .sound-button {
+    width: 62px;
+    height: 62px;
+  }
+
+  .guide {
+    width: min(52vw, 430px);
+    padding: 12px 18px 13px;
+    transform: translate(-50%, -44%);
+  }
+
+  .touch-picture {
+    width: 48px;
+    height: 42px;
+    margin-bottom: 2px;
+  }
+
+  .touch-hand { font-size: 2.2rem; }
+  .touch-ring { width: 29px; height: 29px; }
+  .guide-main { font-size: 1.05rem; line-height: 1.35; }
+  .guide-sub { margin-top: 2px; font-size: 0.76rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .touch-hand,
+  .touch-ring {
+    animation: none;
+  }
+
+  .touch-ring {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+
+  .guide,
+  .sound-button {
+    transition-duration: 100ms;
+  }
+}

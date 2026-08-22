@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff9e9">
+  <meta name="description" content="親子で手洗い・歯磨き・お片付けをまねして遊ぶ幼児向けWebアプリ">
+  <title>できたよ！生活習慣</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app" aria-live="polite">
+    <section id="home-screen" class="screen home-screen is-active" aria-labelledby="home-title">
+      <header class="home-header">
+        <div>
+          <p class="eyebrow">まねっこ あそび</p>
+          <h1 id="home-title">できたよ！</h1>
+          <p class="subtitle">どれにする？</p>
+        </div>
+        <button class="icon-button sound-toggle" type="button" aria-label="おとを けす"><span aria-hidden="true">🔊</span></button>
+      </header>
+
+      <div class="activity-grid" aria-label="あそびを えらぶ">
+        <button class="activity-card hand-card" type="button" data-activity="hand">
+          <span class="card-art" aria-hidden="true"><span>🫧</span><span>👐</span></span>
+          <span>おてて<br>あらおう</span>
+        </button>
+        <button class="activity-card tooth-card" type="button" data-activity="tooth">
+          <span class="card-art" aria-hidden="true"><span>🪥</span><span>😁</span></span>
+          <span>はみがき<br>しよう</span>
+        </button>
+        <button class="activity-card tidy-card" type="button" data-activity="tidy">
+          <span class="card-art" aria-hidden="true"><span>🧸</span><span>🧺</span></span>
+          <span>おもちゃ<br>おかたづけ</span>
+        </button>
+      </div>
+      <p class="grownup-note">おうちのひとと いっしょに あそんでね</p>
+    </section>
+
+    <section id="play-screen" class="screen play-screen" aria-labelledby="instruction">
+      <header class="play-header">
+        <button id="home-button" class="icon-button" type="button" aria-label="おうちへ もどる"><span aria-hidden="true">⌂</span></button>
+        <h2 id="instruction">さわってみよう</h2>
+        <button class="icon-button sound-toggle" type="button" aria-label="おとを けす"><span aria-hidden="true">🔊</span></button>
+      </header>
+      <div id="play-area" class="play-area" aria-label="あそぶ ところ"></div>
+      <div id="progress" class="progress" aria-label="すすみぐあい"></div>
+    </section>
+
+    <section id="complete-screen" class="screen complete-screen" aria-labelledby="complete-title">
+      <header class="complete-header">
+        <span></span>
+        <button class="icon-button sound-toggle" type="button" aria-label="おとを けす"><span aria-hidden="true">🔊</span></button>
+      </header>
+      <div id="celebration" class="celebration" aria-hidden="true"></div>
+      <div id="complete-art" class="complete-art" aria-hidden="true">✨</div>
+      <h2 id="complete-title">できたね！</h2>
+      <p id="complete-message">とっても じょうず！</p>
+      <div id="complete-actions" class="complete-actions is-waiting">
+        <button id="retry-button" class="big-button retry-button" type="button"><span aria-hidden="true">↻</span> もういちど</button>
+        <button id="complete-home-button" class="big-button home-button" type="button"><span aria-hidden="true">⌂</span> おうちへ</button>
+      </div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

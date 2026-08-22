@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#fff9e9">
+  <title>音あそびピアノ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1>おとを ならしてみよう</h1>
+      <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false" aria-label="音を消す">
+        <span class="sound-icon" aria-hidden="true">🔊</span>
+        <span class="sound-text">おと あり</span>
+      </button>
+    </header>
+    <section id="keyboard" class="keyboard" aria-label="7色のピアノ鍵盤"></section>
+    <div id="effects" class="effects" aria-hidden="true"></div>
+    <p id="status" class="visually-hidden" aria-live="polite"></p>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

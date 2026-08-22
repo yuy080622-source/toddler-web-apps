@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#fffaf0">
+  <title>どうぶつをタッチ！</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/script.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>どうぶつをタッチ！</h1>
+      <button class="sound-button" id="sound-button" type="button" aria-label="音声をオフにする。保護者設定は2秒長押し" aria-pressed="true" aria-keyshortcuts="Alt+P">
+        <span class="hold-progress" aria-hidden="true"></span>
+        <span class="sound-icon" aria-hidden="true">🔊</span>
+        <span class="sound-label">おと</span>
+      </button>
+    </header>
+
+    <section class="animal-grid" aria-label="どうぶつを選ぶ">
+      <button class="animal-card dog" type="button" data-animal="dog" aria-label="いぬ。タッチすると、わんわんと鳴きます">
+        <span class="animal-picture" aria-hidden="true">🐶</span>
+        <span class="animal-name">いぬ</span>
+      </button>
+
+      <button class="animal-card cat" type="button" data-animal="cat" aria-label="ねこ。タッチすると、にゃーと鳴きます">
+        <span class="animal-picture" aria-hidden="true">🐱</span>
+        <span class="animal-name">ねこ</span>
+      </button>
+
+      <button class="animal-card elephant" type="button" data-animal="elephant" aria-label="ぞう。タッチすると、ぱおーんと鳴きます">
+        <span class="animal-picture" aria-hidden="true">🐘</span>
+        <span class="water-splash" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="animal-name">ぞう</span>
+      </button>
+
+      <button class="animal-card tiger" type="button" data-animal="tiger" aria-label="とら。タッチすると、がおーと鳴きます">
+        <span class="animal-picture" aria-hidden="true">🐯</span>
+        <span class="animal-name">とら</span>
+      </button>
+    </section>
+
+    <p class="message" id="message" aria-live="polite">どうぶつを さわってみてね</p>
+  </main>
+
+  <section class="finish-screen" id="finish-screen" aria-labelledby="finish-title" hidden>
+    <div class="finish-content">
+      <p class="finish-emoji" aria-hidden="true">🌙</p>
+      <h2 id="finish-title">きょうは おしまい</h2>
+      <p>また あそぼうね</p>
+    </div>
+    <button class="parent-lock-button" id="parent-lock-button" type="button" aria-label="保護者の方は2秒長押ししてください" aria-keyshortcuts="Alt+P">
+      <span class="hold-progress" aria-hidden="true"></span>
+      <span aria-hidden="true">🔒</span>
+      <small>おとなのかた</small>
+    </button>
+  </section>
+
+  <section class="parent-panel" id="parent-panel" role="dialog" aria-modal="true" aria-labelledby="parent-title" hidden>
+    <div class="panel-box">
+      <h2 id="parent-title">保護者設定</h2>
+      <p class="panel-description">遊ぶ時間を選んでください。次に動物をタッチしたときから計測します。</p>
+
+      <div class="time-options" aria-label="遊ぶ時間">
+        <button type="button" data-minutes="5">5分</button>
+        <button type="button" data-minutes="10">10分</button>
+        <button type="button" data-minutes="0">制限なし</button>
+      </div>
+
+      <p class="current-setting" id="current-setting" aria-live="polite"></p>
+
+      <section class="watch-summary" aria-labelledby="watch-title">
+        <h3 id="watch-title">今日の記録</h3>
+        <div class="summary-grid">
+          <p><span>遊んだ時間</span><strong id="today-play-time">0秒</strong></p>
+          <p><span>タッチ</span><strong id="today-touch-count">0回</strong></p>
+        </div>
+        <p class="favorite-animal" id="favorite-animal">よく遊んだ動物：まだありません</p>
+        <ul class="animal-counts" aria-label="動物ごとのタッチ回数">
+          <li>いぬ <strong id="dog-count">0回</strong></li>
+          <li>ねこ <strong id="cat-count">0回</strong></li>
+          <li>ぞう <strong id="elephant-count">0回</strong></li>
+          <li>とら <strong id="tiger-count">0回</strong></li>
+        </ul>
+        <button class="clear-stats-button" id="clear-stats-button" type="button">今日の記録を消す</button>
+        <p class="privacy-note">記録はこの端末内だけに保存され、外部には送信されません。発達や能力を評価するものではありません。</p>
+      </section>
+
+      <button class="resume-button" id="resume-button" type="button">遊びを再開</button>
+      <button class="close-panel-button" id="close-panel-button" type="button">閉じる</button>
+
+      <p class="device-note"><strong>遊ぶ前に、端末の音量が大きすぎないか確認してください。</strong><br>より安全に遊ぶには、iPhone・iPadの「アクセスガイド」またはAndroidの「画面固定」もご利用ください。</p>
+    </div>
+  </section>
+
+  <section class="volume-check" id="volume-check" role="dialog" aria-modal="true" aria-labelledby="volume-check-title" hidden>
+    <div class="volume-check-box">
+      <span class="volume-check-icon" aria-hidden="true">🔉</span>
+      <h2 id="volume-check-title">音量を確認してください</h2>
+      <p>お子さまが遊ぶ前に、端末の音量が大きすぎないか確認してください。</p>
+      <button id="volume-confirm-button" type="button">音量を確認しました</button>
+    </div>
+  </section>
+</body>
+</html>

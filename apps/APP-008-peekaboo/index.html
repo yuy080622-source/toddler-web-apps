@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#fff5d9">
+  <meta name="description" content="カーテンをタッチすると、かわいい動物が現れる1歳児向けWebアプリです。">
+  <title>いないいないばあ！</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <div class="heading-group">
+        <p class="eyebrow">いない いない……</p>
+        <h1>だれが かくれているかな？</h1>
+      </div>
+      <button class="sound-button is-on" id="soundButton" type="button" aria-label="音声をオフにする" aria-pressed="true">
+        <span class="sound-icon" aria-hidden="true">🔊</span>
+        <span class="sound-label">おと</span>
+      </button>
+    </header>
+
+    <section class="play-area" aria-label="いないいないばあの遊び場">
+      <button class="stage" id="stage" type="button" aria-label="カーテンを開ける。タッチしてね">
+        <span class="stage-decoration stage-decoration-top" aria-hidden="true"></span>
+        <span class="glow" id="glow" aria-hidden="true"></span>
+        <span class="sparkles" id="sparkles" aria-hidden="true"></span>
+
+        <span class="character-wrap" id="characterWrap" aria-hidden="true">
+          <img class="character-image" id="characterImage" alt="" draggable="false">
+          <span class="character-emoji" id="characterEmoji"></span>
+        </span>
+
+        <span class="reveal-copy" id="revealCopy" aria-hidden="true">
+          <span class="peekaboo">ばあ！</span>
+          <span class="character-name" id="characterName"></span>
+        </span>
+
+        <span class="curtain curtain-left" aria-hidden="true">
+          <span class="curtain-folds"></span>
+        </span>
+        <span class="curtain curtain-right" aria-hidden="true">
+          <span class="curtain-folds"></span>
+        </span>
+        <span class="curtain-valance" aria-hidden="true"></span>
+
+        <span class="touch-hint" id="touchHint" aria-hidden="true">
+          <span class="touch-icon">☝️</span>
+          <span>ここを タッチ</span>
+        </span>
+      </button>
+      <p class="live-message visually-hidden" id="liveMessage" aria-live="polite"></p>
+    </section>
+
+    <footer class="app-footer">
+      <p class="instruction" id="instruction">カーテンを タッチしてね！</p>
+      <p class="play-count" id="playCount" aria-live="polite"></p>
+    </footer>
+  </main>
+  <script src="js/script.js"></script>
+</body>
+</html>
