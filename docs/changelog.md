@@ -23,5 +23,28 @@
 
 ### 検証・公開
 
-- ローカル移行後の検証、commit、push、GitHub Pages公開結果は同日セクションへ追記する。
+- 7アプリの移行元と移行先にファイル差分がないことを確認
+- 全アプリのJavaScript構文を確認
+- HTML内にGitHub Pagesで壊れるルート絶対パスがないことを確認
+- `main`ブランチへ初回commitをpush
+- GitHub Pagesを`main`／`/ (root)`から有効化
+- APP-006を次のURLで公開
+  - `https://yuy080622-source.github.io/toddler-web-apps/apps/APP-006-colorful-fireworks/`
+- 公開URLで以下を確認
+  - HTML表示：PASS
+  - CSS読込：PASS
+  - JavaScript初期化：PASS
+  - タッチ相当操作による花火：PASS
+  - 音ON／OFF表示：PASS
+  - 音OFFの再読み込み後保持：PASS
+  - 相対パス：PASS
+  - コンソールエラー・警告：なし
 
+### 残る確認
+
+- iPhone／Android実機の音量
+- 実際の複数指
+- 発熱
+- 幼児本人が感じる光量・刺激
+- 実際のタップ感
+- reduced-motionを実機で有効にした操作

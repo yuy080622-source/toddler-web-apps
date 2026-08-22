@@ -44,12 +44,14 @@
 
 - Repository：`https://github.com/yuy080622-source/toddler-web-apps`
 - branch：`main`
-- APP-006予定URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-006-colorful-fireworks/`
+- GitHub Pages：mainブランチの`/ (root)`から公開済み
+- APP-006公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-006-colorful-fireworks/`
+- 公開URLで画面表示、CSS、JavaScript、花火、音OFF、再読み込み後の音OFF維持を確認済み
+- 公開URLのブラウザコンソールにエラー・警告なし
 
 ## 次の作業
 
-1. mainへ初回commitをpushする。
-2. GitHub Pagesをmain／rootから有効化する。
-3. 公開URL上でAPP-006のCSS、JavaScript、花火、音設定保存、404／500を確認する。
-4. ユーザーがiPhone実機テストを行う。
-
+1. ユーザーがAPP-006公開URLをiPhoneで開く。
+2. 音量、音OFF保持、複数指、高速タップ、発熱、光量、タップ感を確認する。
+3. iPhoneの「視差効果を減らす」を有効にして刺激が弱まることを確認する。
+4. 実機結果をAPP-006のCHANGELOGと本handoffへ反映する。
