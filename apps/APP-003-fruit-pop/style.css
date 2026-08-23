@@ -26,7 +26,7 @@ button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent
   min-height: 100dvh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  padding: calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
 }
 
 .header { min-height: 64px; position: relative; display: grid; place-items: center; }
@@ -35,7 +35,7 @@ h1 { margin: 0; padding: 0 76px; font-size: clamp(20px, 5.8vw, 30px); line-heigh
 .small-break { display: none; }
 
 .sound-button {
-  position: absolute; top: 0; right: 0; width: 68px; min-height: 58px; padding: 5px;
+  position: absolute; top: 0; right: 0; width: 68px; min-height: 64px; padding: 5px;
   border: 3px solid rgba(80, 58, 58, .15); border-radius: 22px; background: var(--panel); box-shadow: 0 5px 0 rgba(91,64,64,.1);
   display: grid; place-items: center; gap: 0; cursor: pointer;
 }

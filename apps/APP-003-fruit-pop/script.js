@@ -17,12 +17,15 @@ const soundButton = document.querySelector("#soundButton");
 const prevButton = document.querySelector("#prevButton");
 const nextButton = document.querySelector("#nextButton");
 const pageDots = document.querySelector("#pageDots");
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const unavailableSounds = new Set();
 
 let currentIndex = 0;
 let soundEnabled = readSoundPreference();
 let activeAudio = null;
 let effectTimer = null;
 let effectRunId = 0;
+let pageIsActive = !document.hidden;
 
 function readSoundPreference() {
   try { return localStorage.getItem("fruitPopSound") !== "off"; }
@@ -52,7 +55,7 @@ function renderFruit() {
   fruitEmoji.style.display = "block";
   fruitImage.style.display = "none";
   fruitImage.alt = fruit.name;
-  fruitImage.src = fruit.image;
+  if (fruitImage.getAttribute("src") !== fruit.image) fruitImage.src = fruit.image;
   fruitButton.setAttribute("aria-label", `${fruit.name}。タッチすると音と動きが出ます`);
   renderDots();
 }
@@ -71,7 +74,7 @@ function stopSound() {
 }
 
 function speakWithBrowser(name) {
-  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
+  if (!pageIsActive || !("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
   const utterance = new SpeechSynthesisUtterance(`${name}！`);
   utterance.lang = "ja-JP";
   utterance.rate = 0.82;
@@ -83,34 +86,42 @@ function speakWithBrowser(name) {
 function playName(fruit, runId) {
   stopSound();
   if (!soundEnabled) return;
+  if (unavailableSounds.has(fruit.sound)) {
+    speakWithBrowser(fruit.name);
+    return;
+  }
   const audio = new Audio(fruit.sound);
   activeAudio = audio;
   audio.volume = 0.75;
   let fallbackStarted = false;
   const fallback = () => {
-    if (fallbackStarted || runId !== effectRunId || !soundEnabled) return;
+    if (fallbackStarted || runId !== effectRunId || !soundEnabled || !pageIsActive) return;
     fallbackStarted = true;
     if (activeAudio === audio) activeAudio = null;
     speakWithBrowser(fruit.name);
   };
-  audio.addEventListener("error", fallback, { once: true });
+  audio.addEventListener("error", () => {
+    unavailableSounds.add(fruit.sound);
+    fallback();
+  }, { once: true });
   audio.addEventListener("ended", () => { if (activeAudio === audio) activeAudio = null; }, { once: true });
   audio.play().catch(fallback);
 }
 
 function clearEffect() {
   clearTimeout(effectTimer);
+  effectTimer = null;
   fruitButton.className = "fruit-button";
   popName.classList.remove("show");
   effectLayer.replaceChildren();
 }
 
 function createParticles(fruit) {
-  const count = 8;
+  const count = reducedMotion.matches ? 4 : 8;
   const fragment = document.createDocumentFragment();
   for (let index = 0; index < count; index += 1) {
     const angle = (Math.PI * 2 * index / count) - Math.PI / 2;
-    const distance = 88 + (index % 3) * 22;
+    const distance = reducedMotion.matches ? 58 + (index % 2) * 14 : 88 + (index % 3) * 22;
     const particle = document.createElement("span");
     particle.className = "particle";
     particle.textContent = fruit.particle;
@@ -125,6 +136,7 @@ function createParticles(fruit) {
 
 function activateFruit(event) {
   if (event?.type === "pointerdown") event.preventDefault();
+  if (!pageIsActive) return;
   const fruit = fruits[currentIndex];
   effectRunId += 1;
   const runId = effectRunId;
@@ -152,6 +164,30 @@ function updateSoundButton() {
   soundButton.setAttribute("aria-label", soundEnabled ? "音声をオフにする" : "音声をオンにする");
 }
 
+function pauseApp() {
+  pageIsActive = false;
+  effectRunId += 1;
+  clearEffect();
+  stopSound();
+}
+
+function resumeApp() {
+  pageIsActive = true;
+  soundEnabled = readSoundPreference();
+  clearEffect();
+  renderFruit();
+  updateSoundButton();
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) pauseApp();
+  else resumeApp();
+}
+
+function handlePageShow(event) {
+  if (event.persisted || !pageIsActive) resumeApp();
+}
+
 fruitButton.addEventListener("pointerdown", activateFruit);
 fruitButton.addEventListener("keydown", (event) => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); activateFruit(event); }
@@ -164,7 +200,9 @@ soundButton.addEventListener("click", () => {
   saveSoundPreference();
   updateSoundButton();
 });
-window.addEventListener("pagehide", stopSound);
+document.addEventListener("visibilitychange", handleVisibilityChange);
+window.addEventListener("pagehide", pauseApp);
+window.addEventListener("pageshow", handlePageShow);
 
 renderFruit();
 updateSoundButton();
