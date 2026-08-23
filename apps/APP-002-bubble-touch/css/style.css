@@ -253,9 +253,14 @@ h1 {
   outline-offset: 4px;
 }
 
+.bubble:focus {
+  animation-play-state: paused;
+}
+
 .bubble.is-popping {
   z-index: 8;
   animation: bubble-pop 380ms ease-out forwards;
+  animation-play-state: running;
   pointer-events: none;
 }
 

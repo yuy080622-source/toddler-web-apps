@@ -11,7 +11,10 @@ const CONFIG = {
   maxBubbles: 10,
   edgePadding: 12,
   popDuration: 430,
+  maxConcurrentSounds: 4,
 };
+
+const SOUND_STORAGE_KEY = "bubbleTouchSound";
 
 const BUBBLE_COLORS = [
   ["rgba(91, 211, 255, 0.32)", "rgba(255, 152, 214, 0.25)"],
@@ -22,12 +25,15 @@ const BUBBLE_COLORS = [
 ];
 
 const state = {
-  soundEnabled: true,
+  soundEnabled: loadSoundPreference(),
   poppedCount: 0,
   spawnTimer: null,
   audioContext: null,
+  pendingSoundCount: 0,
+  activeSoundNodes: new Set(),
   guideVisible: true,
   isRunning: false,
+  isDestroyed: false,
   cleanupTimers: new Set(),
 };
 
@@ -45,8 +51,10 @@ function initializeApp() {
   elements.soundButton.addEventListener("click", toggleSound);
   document.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("resize", handleResize);
-  window.addEventListener("pagehide", cleanupApp, { once: true });
+  window.addEventListener("pagehide", handlePageHide);
+  window.addEventListener("pageshow", handlePageShow);
 
+  updateSoundButton();
   startBubbleGeneration();
 }
 
@@ -201,44 +209,97 @@ function removeAfterDelay(element, delay) {
   state.cleanupTimers.add(timer);
 }
 
-function playPopSound() {
-  if (!state.soundEnabled) return;
+function loadSoundPreference() {
+  try {
+    return window.localStorage.getItem(SOUND_STORAGE_KEY) !== "off";
+  } catch (error) {
+    return true;
+  }
+}
+
+function saveSoundPreference() {
+  try {
+    window.localStorage.setItem(SOUND_STORAGE_KEY, state.soundEnabled ? "on" : "off");
+  } catch (error) {
+    // 保存できない環境でも、現在のページ内では切り替えを維持します。
+  }
+}
+
+function updateSoundButton() {
+  elements.soundIcon.textContent = state.soundEnabled ? "🔊" : "🔇";
+  elements.soundButton.setAttribute("aria-pressed", String(state.soundEnabled));
+  elements.soundButton.setAttribute("aria-label", state.soundEnabled ? "音をオフにする" : "音をオンにする");
+}
+
+async function prepareAudio() {
+  if (!state.soundEnabled || state.isDestroyed || document.hidden) return null;
 
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    if (!state.audioContext) state.audioContext = new AudioContextClass();
-
-    const context = state.audioContext;
-    const play = () => {
-      const now = context.currentTime;
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      const filter = context.createBiquadFilter();
-
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(330, now);
-      oscillator.frequency.exponentialRampToValueAtTime(180, now + 0.16);
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(850, now);
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.075, now + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.19);
-
-      oscillator.connect(filter);
-      filter.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(now);
-      oscillator.stop(now + 0.2);
-    };
-
-    if (context.state === "suspended") {
-      context.resume().then(play).catch(() => {});
-    } else {
-      play();
+    if (!AudioContextClass) return null;
+    if (!state.audioContext || state.audioContext.state === "closed") {
+      state.audioContext = new AudioContextClass();
     }
+    if (state.audioContext.state === "suspended") await state.audioContext.resume();
+    return state.audioContext;
   } catch (error) {
-    // 音が使えない環境でも、見た目の動作は続けます。
+    return null;
+  }
+}
+
+function releaseSoundNodes(nodes) {
+  if (!state.activeSoundNodes.delete(nodes)) return;
+  try { nodes.oscillator.disconnect(); } catch (error) { /* すでに切断済みです。 */ }
+  try { nodes.filter.disconnect(); } catch (error) { /* すでに切断済みです。 */ }
+  try { nodes.gain.disconnect(); } catch (error) { /* すでに切断済みです。 */ }
+}
+
+async function playPopSound() {
+  if (
+    !state.soundEnabled ||
+    document.hidden ||
+    state.activeSoundNodes.size + state.pendingSoundCount >= CONFIG.maxConcurrentSounds
+  ) return;
+
+  state.pendingSoundCount += 1;
+  const context = await prepareAudio();
+  state.pendingSoundCount = Math.max(0, state.pendingSoundCount - 1);
+
+  if (
+    !context ||
+    !state.soundEnabled ||
+    state.isDestroyed ||
+    document.hidden ||
+    state.activeSoundNodes.size >= CONFIG.maxConcurrentSounds
+  ) return;
+
+  let nodes = null;
+  try {
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const filter = context.createBiquadFilter();
+    nodes = { oscillator, gain, filter };
+    state.activeSoundNodes.add(nodes);
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(330, now);
+    oscillator.frequency.exponentialRampToValueAtTime(180, now + 0.16);
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(850, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.075, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.19);
+
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(context.destination);
+    oscillator.addEventListener("ended", () => releaseSoundNodes(nodes), { once: true });
+    oscillator.start(now);
+    oscillator.stop(now + 0.2);
+  } catch (error) {
+    if (nodes) releaseSoundNodes(nodes);
+    // 音の生成に失敗しても、泡のアニメーションは続けます。
   }
 }
 
@@ -246,9 +307,10 @@ function toggleSound(event) {
   event.preventDefault();
   event.stopPropagation();
   state.soundEnabled = !state.soundEnabled;
-  elements.soundIcon.textContent = state.soundEnabled ? "🔊" : "🔇";
-  elements.soundButton.setAttribute("aria-pressed", String(state.soundEnabled));
-  elements.soundButton.setAttribute("aria-label", state.soundEnabled ? "音をオフにする" : "音をオンにする");
+  saveSoundPreference();
+  updateSoundButton();
+
+  if (!state.soundEnabled) stopActiveSounds();
 }
 
 function stopPointerEvent(event) {
@@ -274,7 +336,9 @@ function handleBubbleAnimationEnd(event) {
 }
 
 function removeBubble(bubble) {
-  if (bubble?.isConnected) bubble.remove();
+  if (!bubble?.isConnected) return;
+  if (document.activeElement === bubble) elements.playArea.focus({ preventScroll: true });
+  bubble.remove();
 }
 
 function getVisibleBubbleCount() {
@@ -294,9 +358,9 @@ function handleResize() {
 
 function handleVisibilityChange() {
   if (document.hidden) {
-    stopBubbleGeneration();
+    pauseApp();
   } else {
-    startBubbleGeneration();
+    resumeApp();
   }
 }
 
@@ -306,13 +370,51 @@ function stopBubbleGeneration() {
   state.spawnTimer = null;
 }
 
-function cleanupApp() {
-  stopBubbleGeneration();
+function clearTransientDom() {
   state.cleanupTimers.forEach((timer) => window.clearTimeout(timer));
   state.cleanupTimers.clear();
+  elements.playArea.querySelectorAll(".bubble, .sparkle, .pop-word").forEach((element) => element.remove());
+}
+
+function stopActiveSounds() {
+  for (const nodes of [...state.activeSoundNodes]) {
+    try { nodes.oscillator.stop(); } catch (error) { /* すでに停止済みです。 */ }
+    releaseSoundNodes(nodes);
+  }
+  state.pendingSoundCount = 0;
+}
+
+function pauseApp() {
+  stopBubbleGeneration();
+  clearTransientDom();
+  stopActiveSounds();
+
+  if (state.audioContext?.state === "running") {
+    state.audioContext.suspend().catch(() => {});
+  }
+}
+
+function resumeApp() {
+  if (state.isDestroyed || document.hidden) return;
+  startBubbleGeneration();
+}
+
+function cleanupApp() {
+  state.isDestroyed = true;
+  pauseApp();
   if (state.audioContext && state.audioContext.state !== "closed") {
     state.audioContext.close().catch(() => {});
   }
+  state.audioContext = null;
+}
+
+function handlePageHide(event) {
+  if (event.persisted) pauseApp();
+  else cleanupApp();
+}
+
+function handlePageShow(event) {
+  if (event.persisted && !state.isDestroyed) resumeApp();
 }
 
 document.addEventListener("DOMContentLoaded", initializeApp, { once: true });
