@@ -31,6 +31,8 @@
 - **PASS** 別ページへの途中退出と履歴復帰後も打ち上げ可能
 - **PASS** Enter・Spaceキー操作
 - **PASS** 粒子200、打ち上げ光12、同時効果音4、AudioNode切断、中断時破棄、reduced-motion分岐のコード確認
+- **PASS** GitHub Pagesで最新JavaScript、CSS／JS相対パス、打ち上げ・開花、音OFF再読み込み保持を確認
+- **PASS** 公開URLの390×844表示で横スクロール、コンソールエラー・警告なし
 - **FAILなし** Codexで確認できた範囲に公開を妨げる不具合なし
 
 ### 実機確認待ち
