@@ -7,7 +7,7 @@
 | ID | アプリ | 状態 | 次の確認 |
 |---|---|---|---|
 | APP-002 | シャボン玉タッチ | **MVP正式公開済み・実機確認PASS** | 効果判定待ち |
-| APP-003 | くだものポン！ | **果物タップ自動循環へ変更・回帰検証PASS・Pages反映待ち** | 実機の複数指・音量・切替タイミング・刺激 |
+| APP-003 | くだものポン！ | **果物タップ自動循環へ変更・回帰検証／Pages確認PASS** | 実機の複数指・音量・切替タイミング・刺激 |
 | APP-004 | 音あそびピアノ | Repository移行済み。主要実装あり | 複数指、指滑り、同時発音、音量 |
 | APP-005 | できたよ！生活習慣 | Repository移行済み。主要実装あり | 3モード完走、ドラッグ、途中退出 |
 | APP-006 | カラフル花火 | **打ち上げ演出実装・公開URL検証PASS／実機確認待ち** | Before/After実機比較 |
@@ -88,6 +88,7 @@
 - Enterキー操作
 - 390×844、844×390、1024×768で縦横スクロールなし
 - JavaScript構文、差分形式、コンソールエラー・警告なし
+- GitHub Pagesでナビゲーション削除、タップ直後の8粒、約720ms後のバナナ切り替え、音OFF再読み込み保持、390×844のスクロールなし、コンソールエラー・警告なしを確認
 
 ### 実機確認待ち
 
@@ -164,9 +165,9 @@ Afterは新仕様実装後、同程度の長さで上部・中央・下部タッ
 - GitHub Pages：mainブランチの`/ (root)`から公開済み
 - APP-002公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-002-bubble-touch/`
 - APP-006公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-006-colorful-fireworks/`
+- APP-003公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-003-fruit-pop/`
 
 ## 次の作業
 
 1. APP-006の実機Before/After比較を完了する。
-2. APP-003をGitHub Pagesへ反映し、公開URLで回帰確認する。
-3. GitHub Pages上でAPP-003の複数指、音声・音量、safe area、reduced-motion、切り替えタイミング、幼児の操作感、発熱を実機確認する。
+2. GitHub Pages上でAPP-003の複数指、音声・音量、safe area、reduced-motion、切り替えタイミング、幼児の操作感、発熱を実機確認する。
