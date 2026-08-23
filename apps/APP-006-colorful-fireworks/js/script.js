@@ -9,6 +9,7 @@
   const canvasError = document.getElementById("canvasError");
 
   const MAX_PARTICLES = 200;
+  const MAX_LAUNCHES = 12;
   const NORMAL_PARTICLE_COUNT = 36;
   const REDUCED_PARTICLE_COUNT = 18;
   const MAX_PIXEL_RATIO = 2;
@@ -23,6 +24,7 @@
   ];
 
   let context = null;
+  let launches = [];
   let particles = [];
   let animationFrameId = null;
   let previousTime = 0;
@@ -67,6 +69,10 @@
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+    // 回転や画面サイズ変更をまたいだ古い座標を残さないよう、一時演出を破棄します。
+    launches = [];
+    particles = [];
   }
 
   function scheduleCanvasResize() {
@@ -90,7 +96,40 @@
     return items[Math.floor(Math.random() * items.length)];
   }
 
-  function createFirework(x, y) {
+  function getSafeExplosionPosition(x, y) {
+    const width = Math.max(1, window.innerWidth);
+    const height = Math.max(1, window.innerHeight);
+
+    return {
+      x: Math.min(width, Math.max(0, x)),
+      y: Math.min(height * 0.7, Math.max(height * 0.1, y))
+    };
+  }
+
+  function launchFirework(x, y) {
+    if (!context || !isRunning) return;
+
+    const target = getSafeExplosionPosition(x, y);
+    const palette = chooseRandomItem(COLOR_PALETTES);
+
+    launches.push({
+      startY: window.innerHeight + (reducedMotion ? 6 : 12),
+      targetX: target.x,
+      targetY: target.y,
+      color: chooseRandomItem(palette),
+      age: 0,
+      duration: randomBetween(reducedMotion ? 170 : 320, reducedMotion ? 230 : 480),
+      sway: reducedMotion ? 0 : randomBetween(-4, 4)
+    });
+
+    if (launches.length > MAX_LAUNCHES) {
+      launches.splice(0, launches.length - MAX_LAUNCHES);
+    }
+
+    hideGuide();
+  }
+
+  function createExplosion(x, y) {
     if (!context || !isRunning) return;
 
     const palette = chooseRandomItem(COLOR_PALETTES);
@@ -122,8 +161,22 @@
       particles.splice(0, particles.length - MAX_PARTICLES);
     }
 
-    hideGuide();
     playPopSound();
+  }
+
+  function updateLaunches(deltaTime) {
+    const completedLaunches = [];
+
+    for (const launch of launches) {
+      launch.age += deltaTime;
+      if (launch.age >= launch.duration) completedLaunches.push(launch);
+    }
+
+    launches = launches.filter((launch) => launch.age < launch.duration);
+
+    for (const launch of completedLaunches) {
+      createExplosion(launch.targetX, launch.targetY);
+    }
   }
 
   function updateParticles(deltaTime) {
@@ -144,8 +197,41 @@
     particles = particles.filter((particle) => particle.age < particle.lifetime);
   }
 
-  function drawParticles() {
+  function drawLaunches() {
+    for (const launch of launches) {
+      const progress = Math.min(1, launch.age / launch.duration);
+      const easedProgress = 1 - (1 - progress) ** 2;
+      const x = launch.targetX + Math.sin(progress * Math.PI) * launch.sway;
+      const y = launch.startY + (launch.targetY - launch.startY) * easedProgress;
+      const tailLength = reducedMotion ? 6 : 16;
+      const tailDots = reducedMotion ? 2 : 4;
+
+      context.save();
+      context.fillStyle = launch.color;
+      context.shadowColor = launch.color;
+      context.shadowBlur = reducedMotion ? 4 : 8;
+
+      // 細い線ではなく、丸い光を連ねて短い尾を表現します。
+      for (let index = tailDots; index >= 1; index -= 1) {
+        const tailProgress = index / (tailDots + 1);
+        context.globalAlpha = (1 - tailProgress) * (reducedMotion ? 0.3 : 0.42);
+        context.beginPath();
+        context.arc(x, y + tailLength * tailProgress, 1.2 + (1 - tailProgress) * 0.8, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      context.globalAlpha = 0.92;
+      context.beginPath();
+      context.arc(x, y, reducedMotion ? 3 : 3.8, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+  }
+
+  function drawScene() {
     context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    drawLaunches();
 
     for (const particle of particles) {
       const lifeProgress = particle.age / particle.lifetime;
@@ -180,8 +266,9 @@
 
     const deltaTime = previousTime ? Math.min(currentTime - previousTime, 34) : 16.67;
     previousTime = currentTime;
+    updateLaunches(deltaTime);
     updateParticles(deltaTime);
-    drawParticles();
+    drawScene();
     animationFrameId = window.requestAnimationFrame(animationLoop);
   }
 
@@ -283,7 +370,7 @@
     if (!event.isPrimary && event.pointerType !== "touch") return;
     event.preventDefault();
     const position = getPointerPosition(event);
-    createFirework(position.x, position.y);
+    launchFirework(position.x, position.y);
   }
 
   function handleKeyboard(event) {
@@ -291,7 +378,7 @@
     if (event.key !== "Enter" && event.key !== " ") return;
 
     event.preventDefault();
-    createFirework(window.innerWidth / 2, window.innerHeight / 2);
+    launchFirework(window.innerWidth / 2, window.innerHeight / 2);
   }
 
   function handleMotionPreferenceChange(event) {
@@ -314,6 +401,7 @@
     window.cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
     previousTime = 0;
+    launches = [];
     particles = [];
     if (context) context.clearRect(0, 0, window.innerWidth, window.innerHeight);
     stopActiveSounds();
