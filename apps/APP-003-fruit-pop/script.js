@@ -14,9 +14,6 @@ const fruitName = document.querySelector("#fruitName");
 const popName = document.querySelector("#popName");
 const effectLayer = document.querySelector("#effectLayer");
 const soundButton = document.querySelector("#soundButton");
-const prevButton = document.querySelector("#prevButton");
-const nextButton = document.querySelector("#nextButton");
-const pageDots = document.querySelector("#pageDots");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const unavailableSounds = new Set();
 
@@ -37,14 +34,6 @@ function saveSoundPreference() {
   catch (_) { /* Storage may be unavailable in private browsing. */ }
 }
 
-function renderDots() {
-  pageDots.replaceChildren(...fruits.map((fruit, index) => {
-    const dot = document.createElement("span");
-    dot.className = `dot${index === currentIndex ? " active" : ""}`;
-    return dot;
-  }));
-}
-
 function renderFruit() {
   const fruit = fruits[currentIndex];
   document.documentElement.style.setProperty("--background", fruit.backgroundColor);
@@ -57,7 +46,6 @@ function renderFruit() {
   fruitImage.alt = fruit.name;
   if (fruitImage.getAttribute("src") !== fruit.image) fruitImage.src = fruit.image;
   fruitButton.setAttribute("aria-label", `${fruit.name}。タッチすると音と動きが出ます`);
-  renderDots();
 }
 
 fruitImage.addEventListener("load", () => {
@@ -146,7 +134,10 @@ function activateFruit(event) {
   popName.classList.add("show");
   createParticles(fruit);
   playName(fruit, runId);
-  effectTimer = window.setTimeout(() => { if (runId === effectRunId) clearEffect(); }, 720);
+  effectTimer = window.setTimeout(() => {
+    if (runId !== effectRunId || !pageIsActive) return;
+    changeFruit(1);
+  }, 720);
 }
 
 function changeFruit(offset) {
@@ -192,8 +183,6 @@ fruitButton.addEventListener("pointerdown", activateFruit);
 fruitButton.addEventListener("keydown", (event) => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); activateFruit(event); }
 });
-prevButton.addEventListener("click", () => changeFruit(-1));
-nextButton.addEventListener("click", () => changeFruit(1));
 soundButton.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   if (!soundEnabled) stopSound();

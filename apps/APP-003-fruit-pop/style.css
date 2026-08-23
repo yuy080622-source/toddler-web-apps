@@ -25,7 +25,7 @@ button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent
   min-height: 100%;
   min-height: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
   padding: calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
 }
 
@@ -39,13 +39,13 @@ h1 { margin: 0; padding: 0 76px; font-size: clamp(20px, 5.8vw, 30px); line-heigh
   border: 3px solid rgba(80, 58, 58, .15); border-radius: 22px; background: var(--panel); box-shadow: 0 5px 0 rgba(91,64,64,.1);
   display: grid; place-items: center; gap: 0; cursor: pointer;
 }
-.sound-button:active, .nav-button:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(91,64,64,.1); }
+.sound-button:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(91,64,64,.1); }
 .sound-icon { font-size: 27px; line-height: 1; }
 .sound-label { font-size: 13px; font-weight: 800; }
 
 .play-area { min-height: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .fruit-button { width: min(58vw, 350px); height: min(58vw, 350px); min-width: 210px; min-height: 210px; border: 0; border-radius: 50%; background: rgba(255,255,255,.48); box-shadow: var(--shadow); display: grid; place-items: center; padding: 8px; cursor: pointer; position: relative; z-index: 2; }
-.fruit-button:focus-visible, .nav-button:focus-visible, .sound-button:focus-visible { outline: 5px solid #2878c8; outline-offset: 4px; }
+.fruit-button:focus-visible, .sound-button:focus-visible { outline: 5px solid #2878c8; outline-offset: 4px; }
 .fruit-image, .fruit-emoji { grid-area: 1 / 1; max-width: 88%; max-height: 88%; object-fit: contain; pointer-events: none; }
 .fruit-image { display: none; }
 .fruit-emoji { font-size: min(43vw, 255px); line-height: 1; filter: drop-shadow(0 7px 2px rgba(70,40,40,.14)); }
@@ -61,12 +61,6 @@ h1 { margin: 0; padding: 0 76px; font-size: clamp(20px, 5.8vw, 30px); line-heigh
 .fruit-button.effect-heart { animation: fruit-heart 700ms ease; }
 .fruit-button.effect-burst { animation: fruit-burst 700ms ease; }
 
-.navigation { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; padding-top: 8px; }
-.nav-button { min-height: 64px; border: 3px solid rgba(80,58,58,.13); border-radius: 23px; background: var(--panel); box-shadow: 0 6px 0 rgba(91,64,64,.11); font-size: clamp(21px, 6vw, 30px); font-weight: 900; cursor: pointer; }
-.page-dots { display: flex; gap: 7px; }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(80,58,58,.22); }
-.dot.active { width: 13px; height: 13px; background: var(--ink); }
-
 @keyframes fruit-bounce { 0%,100%{transform:translateY(0)} 38%{transform:translateY(-34px) scale(1.04)} 62%{transform:translateY(5px)} }
 @keyframes fruit-sway { 0%,100%{transform:rotate(0)} 22%{transform:rotate(-10deg)} 48%{transform:rotate(10deg)} 72%{transform:rotate(-6deg)} }
 @keyframes fruit-heart { 0%,100%{transform:scale(1)} 35%{transform:scale(1.1)} 58%{transform:scale(.96)} 76%{transform:scale(1.04)} }
@@ -74,6 +68,6 @@ h1 { margin: 0; padding: 0 76px; font-size: clamp(20px, 5.8vw, 30px); line-heigh
 @keyframes name-pop { 0%{opacity:0;transform:translate(-50%,-50%) scale(.5)} 20%,68%{opacity:1;transform:translate(-50%,-62%) scale(1)} 100%{opacity:0;transform:translate(-50%,-82%) scale(1.05)} }
 @keyframes particle-pop { 0%{opacity:0;transform:translate(-50%,-50%) scale(.25)} 22%{opacity:1} 100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--r)) scale(1.15)} }
 
-@media (max-width: 360px) { h1 { font-size: 20px; padding-left: 66px; padding-right: 66px; } .small-break { display: block; } .sound-button{width:60px}.fruit-button{min-width:190px;min-height:190px}.fruit-name{margin-top:8px}.nav-button{min-height:58px} }
-@media (orientation: landscape) and (max-height: 520px) { .app{grid-template-columns:1fr minmax(250px,1.5fr);grid-template-rows:auto 1fr}.header{grid-column:1/-1}.play-area{grid-column:2;grid-row:2}.navigation{grid-column:1;grid-row:2;grid-template-columns:1fr;align-content:center}.page-dots{justify-content:center}.fruit-button{width:min(44vh,270px);height:min(44vh,270px);min-width:170px;min-height:170px}.fruit-emoji{font-size:min(33vh,190px)}.fruit-name{font-size:32px} }
+@media (max-width: 360px) { h1 { font-size: 20px; padding-left: 66px; padding-right: 66px; } .small-break { display: block; } .sound-button{width:60px}.fruit-button{min-width:190px;min-height:190px}.fruit-name{margin-top:8px} }
+@media (orientation: landscape) and (max-height: 520px) { .fruit-button{width:min(44vh,270px);height:min(44vh,270px);min-width:170px;min-height:170px}.fruit-emoji{font-size:min(33vh,190px)}.fruit-name{font-size:32px} }
 @media (prefers-reduced-motion: reduce) { body{transition:none}.fruit-button.effect-bounce,.fruit-button.effect-sway,.fruit-button.effect-heart,.fruit-button.effect-burst{animation-duration:350ms;animation-name:fruit-gentle}.particle,.pop-name.show{animation-duration:450ms}@keyframes fruit-gentle{50%{transform:scale(1.035)}} }
