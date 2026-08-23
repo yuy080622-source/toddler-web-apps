@@ -26,7 +26,6 @@ const BUBBLE_COLORS = [
 
 const state = {
   soundEnabled: loadSoundPreference(),
-  poppedCount: 0,
   spawnTimer: null,
   audioContext: null,
   pendingSoundCount: 0,
@@ -44,7 +43,6 @@ function initializeApp() {
   elements.playArea = document.querySelector("#playArea");
   elements.soundButton = document.querySelector("#soundButton");
   elements.soundIcon = document.querySelector("#soundIcon");
-  elements.count = document.querySelector("#count");
   elements.guide = document.querySelector("#guide");
 
   elements.soundButton.addEventListener("pointerdown", stopPointerEvent);
@@ -156,9 +154,6 @@ function popBubble(bubble) {
 
   bubble.dataset.isPopping = "true";
   bubble.classList.add("is-popping");
-  state.poppedCount += 1;
-
-  updateCountDisplay();
   hideGuide();
   playPopSound();
   createSparkles(bubble);
@@ -315,12 +310,6 @@ function toggleSound(event) {
 
 function stopPointerEvent(event) {
   event.stopPropagation();
-}
-
-function updateCountDisplay() {
-  elements.count.textContent = state.poppedCount === 0
-    ? "シャボン玉を タッチ！"
-    : `${state.poppedCount}こ われたよ！`;
 }
 
 function hideGuide() {

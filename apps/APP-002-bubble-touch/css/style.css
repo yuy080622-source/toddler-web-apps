@@ -2,7 +2,6 @@
   --ink: #24506d;
   --white: rgba(255, 255, 255, 0.94);
   --header-height: 118px;
-  --footer-height: 62px;
 }
 
 * {
@@ -165,7 +164,7 @@ h1 {
   z-index: 5;
   top: calc(var(--header-height) + env(safe-area-inset-top));
   right: 0;
-  bottom: calc(var(--footer-height) + env(safe-area-inset-bottom));
+  bottom: env(safe-area-inset-bottom);
   left: 0;
   overflow: hidden;
   touch-action: none;
@@ -300,32 +299,6 @@ h1 {
   pointer-events: none;
 }
 
-.app-footer {
-  position: absolute;
-  z-index: 20;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: grid;
-  place-items: start center;
-  height: calc(var(--footer-height) + env(safe-area-inset-bottom));
-  padding: 8px 18px calc(8px + env(safe-area-inset-bottom));
-  pointer-events: none;
-}
-
-.count {
-  min-width: 180px;
-  margin: 0;
-  padding: 7px 18px;
-  border-radius: 999px;
-  color: #376c7d;
-  background: rgba(255, 255, 255, 0.62);
-  font-size: clamp(0.88rem, 3.5vw, 1rem);
-  font-weight: 800;
-  text-align: center;
-  box-shadow: 0 3px 12px rgba(48, 119, 148, 0.09);
-}
-
 @keyframes bubble-rise {
   0% { transform: translate3d(0, 0, 0) rotate(-2deg); }
   25% { transform: translate3d(var(--drift), -28vh, 0) rotate(2deg); }
@@ -367,7 +340,7 @@ h1 {
 }
 
 @media (orientation: landscape) and (max-height: 560px) {
-  :root { --header-height: 82px; --footer-height: 48px; }
+  :root { --header-height: 82px; }
   .app-header { padding-top: calc(8px + env(safe-area-inset-top)); }
   .eyebrow { font-size: 0.68rem; }
   h1 { font-size: clamp(1.05rem, 3.6vw, 1.5rem); }
@@ -376,7 +349,6 @@ h1 {
   .guide { top: 44%; padding: 8px 14px; }
   .guide-hand { font-size: 1.8rem; }
   .guide p { font-size: 0.92rem; }
-  .count { padding-block: 4px; }
 }
 
 @media (min-width: 760px) {
