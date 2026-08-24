@@ -32,6 +32,9 @@
 - **PASS** 途中退出・履歴復帰後の演出・粒子残留なし
 - **PASS** 正式MP3未配置状態でMP3アクセスなし
 - **PASS** JavaScript構文、差分形式
+- **PASS** GitHub Pagesデプロイ（実装commit `5c175d94febd9fb446d308d73a347f4cf3e05ec6`）
+- **PASS** 公開JavaScriptに直接読み上げ分岐、MP3無効、自動切り替え時の音声維持を確認
+- **PASS** 公開URLで果物演出、自動循環、スクロールなし、コンソールエラー・警告なし
 - iPhoneで実際に音が聞こえるかは再確認待ち
 
 ### 次の確認
