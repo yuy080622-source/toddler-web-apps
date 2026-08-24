@@ -16,6 +16,8 @@ const effectLayer = document.querySelector("#effectLayer");
 const soundButton = document.querySelector("#soundButton");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const unavailableSounds = new Set();
+// 正式MP3を配置したときだけtrueにする。MVPではタップ内で読み上げを直接開始する。
+const useOfficialAudio = false;
 
 let currentIndex = 0;
 let soundEnabled = readSoundPreference();
@@ -74,6 +76,10 @@ function speakWithBrowser(name) {
 function playName(fruit, runId) {
   stopSound();
   if (!soundEnabled) return;
+  if (!useOfficialAudio) {
+    speakWithBrowser(fruit.name);
+    return;
+  }
   if (unavailableSounds.has(fruit.sound)) {
     speakWithBrowser(fruit.name);
     return;
@@ -136,14 +142,14 @@ function activateFruit(event) {
   playName(fruit, runId);
   effectTimer = window.setTimeout(() => {
     if (runId !== effectRunId || !pageIsActive) return;
-    changeFruit(1);
+    changeFruit(1, false);
   }, 720);
 }
 
-function changeFruit(offset) {
+function changeFruit(offset, shouldStopSound = true) {
   effectRunId += 1;
   clearEffect();
-  stopSound();
+  if (shouldStopSound) stopSound();
   currentIndex = (currentIndex + offset + fruits.length) % fruits.length;
   renderFruit();
 }
