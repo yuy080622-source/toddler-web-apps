@@ -15,9 +15,12 @@ const popName = document.querySelector("#popName");
 const effectLayer = document.querySelector("#effectLayer");
 const soundButton = document.querySelector("#soundButton");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-const unavailableSounds = new Set();
-// 正式MP3を配置したときだけtrueにする。MVPではタップ内で読み上げを直接開始する。
-const useOfficialAudio = false;
+const audioPlayers = new Map(fruits.map((fruit) => {
+  const audio = new Audio(fruit.sound);
+  audio.preload = "auto";
+  audio.volume = 0.75;
+  return [fruit.id, audio];
+}));
 
 let currentIndex = 0;
 let soundEnabled = readSoundPreference();
@@ -59,48 +62,34 @@ fruitImage.addEventListener("load", () => {
 fruitImage.addEventListener("error", () => { fruitImage.style.display = "none"; fruitEmoji.style.display = "block"; });
 
 function stopSound() {
-  if (activeAudio) { activeAudio.pause(); activeAudio.currentTime = 0; activeAudio = null; }
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  if (!activeAudio) return;
+  activeAudio.pause();
+  activeAudio.currentTime = 0;
+  activeAudio = null;
 }
 
-function speakWithBrowser(name) {
-  if (!pageIsActive || !("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
-  const utterance = new SpeechSynthesisUtterance(`${name}！`);
-  utterance.lang = "ja-JP";
-  utterance.rate = 0.82;
-  utterance.pitch = 1.12;
-  utterance.volume = 0.8;
-  window.speechSynthesis.speak(utterance);
-}
-
-function playName(fruit, runId) {
+function playName(fruit) {
   stopSound();
-  if (!soundEnabled) return;
-  if (!useOfficialAudio) {
-    speakWithBrowser(fruit.name);
-    return;
-  }
-  if (unavailableSounds.has(fruit.sound)) {
-    speakWithBrowser(fruit.name);
-    return;
-  }
-  const audio = new Audio(fruit.sound);
+  if (!soundEnabled || !pageIsActive) return;
+  const audio = audioPlayers.get(fruit.id);
+  if (!audio) return;
   activeAudio = audio;
-  audio.volume = 0.75;
-  let fallbackStarted = false;
-  const fallback = () => {
-    if (fallbackStarted || runId !== effectRunId || !soundEnabled || !pageIsActive) return;
-    fallbackStarted = true;
-    if (activeAudio === audio) activeAudio = null;
-    speakWithBrowser(fruit.name);
-  };
-  audio.addEventListener("error", () => {
-    unavailableSounds.add(fruit.sound);
-    fallback();
-  }, { once: true });
-  audio.addEventListener("ended", () => { if (activeAudio === audio) activeAudio = null; }, { once: true });
-  audio.play().catch(fallback);
+  audio.currentTime = 0;
+  const playResult = audio.play();
+  if (playResult) {
+    playResult.catch(() => {
+      if (activeAudio === audio) activeAudio = null;
+    });
+  }
 }
+
+audioPlayers.forEach((audio) => {
+  const clearActiveAudio = () => {
+    if (activeAudio === audio) activeAudio = null;
+  };
+  audio.addEventListener("ended", clearActiveAudio);
+  audio.addEventListener("error", clearActiveAudio);
+});
 
 function clearEffect() {
   clearTimeout(effectTimer);
@@ -139,7 +128,7 @@ function activateFruit(event) {
   fruitButton.classList.add(`effect-${fruit.effectType}`);
   popName.classList.add("show");
   createParticles(fruit);
-  playName(fruit, runId);
+  playName(fruit);
   effectTimer = window.setTimeout(() => {
     if (runId !== effectRunId || !pageIsActive) return;
     changeFruit(1, false);
