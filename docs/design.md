@@ -9,6 +9,14 @@
 - 共通ホーム導線は`shared/portal-home.css`と`shared/portal-home.js`に分離し、各アプリの遊び処理とは独立させる。
 - 長押し進捗は`requestAnimationFrame`と円形の穏やかな表示で示し、完了前の解除・取消では状態を破棄する。
 
+## Microsoft Clarity
+
+- Project ID `y7wygqymd5`を`shared/clarity.js`の1か所で管理する。
+- Repositoryルートは`shared/clarity.js`、各APPは`../../shared/clarity.js`を参照し、GitHub Pagesの相対パスに対応する。
+- Clarity本体は非同期で読み込み、取得失敗や遮断時もポータルと各アプリの初期化・操作へ依存関係を作らない。
+- URLパス別の標準分析、セッション録画、ヒートマップだけで開始し、カスタムイベントやカスタムユーザーIDは設定しない。
+- 将来正式公開するAPPも同じ共通ファイルを参照する。
+
 ## 基本構成
 
 - HTML、CSS、Vanilla JavaScriptを基本とする。
