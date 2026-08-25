@@ -17,7 +17,10 @@
 
 ### 次の確認
 
-- GitHub Pages反映後、iPhone Safariで最初に4果物すべての音が出るか確認
+- 実装commit `77d7b6993fda02266fe785cff01c3f80c55dafa6`のGitHub PagesデプロイはPASS
+- 公開4MP3はHTTP 200で提供元とSHA-256一致
+- 公開画面のタップ演出、720ms自動循環、390×844のスクロール、コンソールをPASS
+- iPhone Safariで最初に4果物すべての音が出るか確認
 - 音が出た場合、語尾、声質、音量を改めて判定
 - 正式公開判定は実機音声確認まで保留
 
