@@ -100,6 +100,14 @@ button {
   padding: calc(18px + env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left));
 }
 
+.top-bar .portal-home-button {
+  --portal-home-background: rgba(32, 38, 91, 0.88);
+  --portal-home-focus: rgba(255, 234, 143, 0.9);
+  margin-right: 10px;
+}
+
+.title-area { flex: 1 1 auto; min-width: 0; }
+
 .title-area {
   padding-top: 3px;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);

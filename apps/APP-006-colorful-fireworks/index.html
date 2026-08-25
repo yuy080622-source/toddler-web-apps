@@ -7,6 +7,7 @@
     <meta name="description" content="タッチすると、やさしい音とカラフルな花火が広がる幼児向けWebアプリです。">
     <title>カラフル花火</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../../shared/portal-home.css">
   </head>
   <body>
     <main id="app" class="app" tabindex="0" aria-label="花火を出す画面。Enterキーかスペースキーでも遊べます">
@@ -20,6 +21,9 @@
       </div>
 
       <header class="top-bar">
+        <button class="portal-home-button" type="button" data-portal-home="../../" aria-label="ホームへ戻る（2秒長押し）">
+          <span class="portal-home-icon" aria-hidden="true">🏠</span>
+        </button>
         <div class="title-area">
           <p class="eyebrow">ゆびで ポン！</p>
           <h1>カラフル花火</h1>
@@ -52,5 +56,6 @@
     </main>
 
     <script src="js/script.js" defer></script>
+    <script src="../../shared/portal-home.js" defer></script>
   </body>
 </html>

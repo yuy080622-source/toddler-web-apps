@@ -1,0 +1,46 @@
+.portal-home-button {
+  --hold-progress: 0deg;
+  position: relative;
+  z-index: 100;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  padding: 6px;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: conic-gradient(currentColor var(--hold-progress), transparent 0);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.portal-home-button::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: inherit;
+  background: var(--portal-home-background, rgba(255, 255, 255, 0.82));
+  box-shadow: var(--portal-home-shadow, 0 5px 14px rgba(0, 0, 0, 0.16));
+}
+.portal-home-icon {
+  position: relative;
+  font-size: 30px;
+  line-height: 1;
+  transform: scale(calc(1 - var(--hold-ratio, 0) * 0.08));
+  transition: transform 120ms linear, opacity 120ms linear;
+}
+.portal-home-button.is-holding .portal-home-icon { opacity: 0.78; }
+.portal-home-button:focus-visible {
+  outline: 4px solid var(--portal-home-focus, #2878c8);
+  outline-offset: 3px;
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .portal-home-button { width: 60px; height: 60px; }
+  .portal-home-icon { font-size: 27px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-home-icon { transition: none; transform: none; }
+}

@@ -7,10 +7,14 @@
   <title>くだものポン！</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../shared/portal-home.css">
 </head>
 <body>
   <main class="app" aria-label="くだものポン！">
     <header class="header">
+      <button class="portal-home-button" type="button" data-portal-home="../../" aria-label="ホームへ戻る（2秒長押し）">
+        <span class="portal-home-icon" aria-hidden="true">🏠</span>
+      </button>
       <h1>くだものを<br class="small-break"> タッチしてね</h1>
       <button id="soundButton" class="sound-button" type="button" aria-pressed="true" aria-label="音声をオフにする">
         <span class="sound-icon" aria-hidden="true">🔊</span>
@@ -30,5 +34,6 @@
 
   </main>
   <script src="script.js"></script>
+  <script src="../../shared/portal-home.js"></script>
 </body>
 </html>

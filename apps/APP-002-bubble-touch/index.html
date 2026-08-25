@@ -8,6 +8,7 @@
   <title>シャボン玉タッチ</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../../shared/portal-home.css">
 </head>
 <body>
   <main class="app" id="app">
@@ -20,6 +21,9 @@
     </div>
 
     <header class="app-header">
+      <button class="portal-home-button" type="button" data-portal-home="../../" aria-label="ホームへ戻る（2秒長押し）">
+        <span class="portal-home-icon" aria-hidden="true">🏠</span>
+      </button>
       <div class="heading-group">
         <p class="eyebrow">ふわふわ ぷかぷか</p>
         <h1>シャボン玉をタッチ！</h1>
@@ -42,5 +46,6 @@
   </main>
 
   <script src="js/script.js" defer></script>
+  <script src="../../shared/portal-home.js" defer></script>
 </body>
 </html>

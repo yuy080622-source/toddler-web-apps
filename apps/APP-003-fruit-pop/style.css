@@ -30,6 +30,7 @@ button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent
 }
 
 .header { min-height: 64px; position: relative; display: grid; place-items: center; }
+.header .portal-home-button { position: absolute; top: 0; left: 0; }
 
 h1 { margin: 0; padding: 0 76px; font-size: clamp(20px, 5.8vw, 30px); line-height: 1.25; letter-spacing: .04em; text-align: center; }
 .small-break { display: none; }

@@ -118,6 +118,8 @@ button {
   min-width: 0;
 }
 
+.portal-home-button { margin-top: -3px; margin-right: 10px; }
+
 .eyebrow {
   margin: 0 0 3px;
   color: #3b7b9d;
