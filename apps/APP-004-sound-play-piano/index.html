@@ -5,11 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#fff9e9">
   <title>音あそびピアノ</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../shared/portal-home.css">
+  <script src="../../shared/clarity.js"></script>
 </head>
 <body>
   <main class="app">
     <header class="header">
+      <button class="portal-home-button" type="button" data-portal-home="../../" aria-label="ホームへ戻る（2秒長押し）">
+        <span class="portal-home-icon" aria-hidden="true">🏠</span>
+      </button>
       <h1>おとを ならしてみよう</h1>
       <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false" aria-label="音を消す">
         <span class="sound-icon" aria-hidden="true">🔊</span>
@@ -21,5 +27,6 @@
     <p id="status" class="visually-hidden" aria-live="polite"></p>
   </main>
   <script src="script.js"></script>
+  <script src="../../shared/portal-home.js"></script>
 </body>
 </html>

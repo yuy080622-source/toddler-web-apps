@@ -11,6 +11,7 @@ const NOTES = [
 ];
 
 const MAX_VOICES = 5;
+const MAX_PARTICLES = 60;
 const SOUND_KEY = "sound-play-piano-sound-enabled";
 const keyboard = document.querySelector("#keyboard");
 const effects = document.querySelector("#effects");
@@ -78,6 +79,17 @@ function stopVoice(voice, quickly = false) {
   try { voice.oscillator.stop(now + (quickly ? 0.08 : 0.25)); } catch { /* already stopped */ }
 }
 
+function disposeAllVoices() {
+  activeVoices.splice(0).forEach((voice) => {
+    voice.stopping = true;
+    try { voice.gain.gain.cancelScheduledValues(audioContext?.currentTime || 0); } catch { /* unavailable context */ }
+    try { voice.gain.gain.value = 0.0001; } catch { /* already disconnected */ }
+    try { voice.oscillator.stop(); } catch { /* already stopped */ }
+    try { voice.oscillator.disconnect(); } catch { /* already disconnected */ }
+    try { voice.gain.disconnect(); } catch { /* already disconnected */ }
+  });
+}
+
 function playTone(note) {
   if (!ensureAudio()) return;
   while (activeVoices.length >= MAX_VOICES) stopVoice(activeVoices.shift(), true);
@@ -120,6 +132,8 @@ function createParticles(key, note, clientX, clientY) {
   const y = Number.isFinite(clientY) ? clientY : rect.top + rect.height / 2;
   const count = 2 + Math.floor(Math.random() * 4);
   for (let index = 0; index < count; index += 1) {
+    const oldestParticle = effects.querySelector(".particle");
+    if (effects.querySelectorAll(".particle").length >= MAX_PARTICLES) oldestParticle?.remove();
     const particle = document.createElement("span");
     particle.className = "particle";
     particle.textContent = Math.random() > 0.45 ? "♪" : "●";
@@ -201,6 +215,27 @@ soundToggle.addEventListener("click", () => {
   updateSoundButton();
   status.textContent = soundEnabled ? "音を出します" : "音を消しました";
 });
+
+function clearTransientState() {
+  pointerKeys.clear();
+  keyTimers.forEach((timer) => clearTimeout(timer));
+  keyTimers.clear();
+  keyboard.querySelectorAll(".is-active").forEach((key) => key.classList.remove("is-active"));
+  effects.replaceChildren();
+  celebrationActive = false;
+  disposeAllVoices();
+}
+
+function suspendAudio() {
+  clearTransientState();
+  if (audioContext?.state === "running") audioContext.suspend().catch(() => {});
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) suspendAudio();
+});
+window.addEventListener("pagehide", suspendAudio);
+window.addEventListener("pageshow", clearTransientState);
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
 document.addEventListener("dragstart", (event) => event.preventDefault());

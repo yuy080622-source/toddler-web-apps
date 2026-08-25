@@ -31,14 +31,14 @@ body {
 
 .header {
   z-index: 3;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   padding: 6px clamp(4px, 2vw, 20px);
 }
 
-h1 { margin: 0; font-size: clamp(1.1rem, 4.8vw, 2rem); line-height: 1.1; }
+h1 { margin: 0; font-size: clamp(1.1rem, 4.8vw, 2rem); line-height: 1.1; text-align: center; }
 
 .sound-toggle {
   display: flex;
