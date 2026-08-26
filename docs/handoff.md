@@ -129,6 +129,9 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - 約2秒長押しの共通ホーム導線とPRJ-003共通Clarityを追加
 - 7鍵盤、Enter／Space、指滑り、同一鍵盤内の非再発音、100回高速操作、音OFF保存、履歴復帰をPASS
 - 390×844、844×390、1024×768で縦横スクロールなし、コンソールエラー・警告なし
+- 実装commit `c9a0dd7a447ef91dbc68e8f9ac91c0ebf944978e`のGitHub Pagesデプロイrun #24がsuccess
+- 公開URLで7鍵盤、通常操作、共通ホーム導線、Clarity Project ID、相対パス、スクロール、コンソールをPASS
+- 公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
 - 実際の2本指以上、同時発音の聴感、音量、高速連打、中断・復帰、画面回転、reduced-motionはiPhone実機確認待ち
 - APP-004は正式公開判定前のため、共通ポータルのカード一覧にはまだ追加していない
 
@@ -204,6 +207,7 @@ Afterは新仕様実装後、同程度の長さで上部・中央・下部タッ
 - APP-002公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-002-bubble-touch/`
 - APP-006公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-006-colorful-fireworks/`
 - APP-003公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-003-fruit-pop/`
+- APP-004公開候補URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
 
 ## 次の作業
 
