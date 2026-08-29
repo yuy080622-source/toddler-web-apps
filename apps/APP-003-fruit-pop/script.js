@@ -1,10 +1,10 @@
 "use strict";
 
 const fruits = [
-  { id: "apple", name: "りんご", emoji: "🍎", image: "assets/images/apple.webp", sound: "assets/sounds/apple.mp3", backgroundColor: "#fff1e5", effectType: "bounce", particle: "★", particleColors: ["#ff665f", "#ffd45a", "#ff9b7d"] },
-  { id: "banana", name: "バナナ", emoji: "🍌", image: "assets/images/banana.webp", sound: "assets/sounds/banana.mp3", backgroundColor: "#fff8cf", effectType: "sway", particle: "●", particleColors: ["#f4c62d", "#fff07a", "#f09d3e"] },
-  { id: "strawberry", name: "いちご", emoji: "🍓", image: "assets/images/strawberry.webp", sound: "assets/sounds/strawberry.mp3", backgroundColor: "#ffe7ed", effectType: "heart", particle: "♥", particleColors: ["#f15b78", "#ff9db1", "#e94166"] },
-  { id: "grape", name: "ぶどう", emoji: "🍇", image: "assets/images/grape.webp", sound: "assets/sounds/grape.mp3", backgroundColor: "#f0e8ff", effectType: "burst", particle: "●", particleColors: ["#8057c8", "#b886e8", "#e09aea"] }
+  { id: "apple", name: "りんご", emoji: "🍎", image: null, sound: "assets/sounds/apple.mp3", backgroundColor: "#fff1e5", effectType: "bounce", particle: "★", particleColors: ["#ff665f", "#ffd45a", "#ff9b7d"] },
+  { id: "banana", name: "バナナ", emoji: "🍌", image: null, sound: "assets/sounds/banana.mp3", backgroundColor: "#fff8cf", effectType: "sway", particle: "●", particleColors: ["#f4c62d", "#fff07a", "#f09d3e"] },
+  { id: "strawberry", name: "いちご", emoji: "🍓", image: null, sound: "assets/sounds/strawberry.mp3", backgroundColor: "#ffe7ed", effectType: "heart", particle: "♥", particleColors: ["#f15b78", "#ff9db1", "#e94166"] },
+  { id: "grape", name: "ぶどう", emoji: "🍇", image: null, sound: "assets/sounds/grape.mp3", backgroundColor: "#f0e8ff", effectType: "burst", particle: "●", particleColors: ["#8057c8", "#b886e8", "#e09aea"] }
 ];
 
 const fruitButton = document.querySelector("#fruitButton");
@@ -48,13 +48,19 @@ function renderFruit() {
   fruitEmoji.textContent = fruit.emoji;
   fruitEmoji.style.display = "block";
   fruitImage.style.display = "none";
-  fruitImage.alt = fruit.name;
-  if (fruitImage.getAttribute("src") !== fruit.image) fruitImage.src = fruit.image;
+  if (fruit.image) {
+    fruitImage.alt = fruit.name;
+    if (fruitImage.getAttribute("src") !== fruit.image) fruitImage.src = fruit.image;
+  } else {
+    fruitImage.removeAttribute("src");
+    fruitImage.alt = "";
+  }
   fruitButton.setAttribute("aria-label", `${fruit.name}。タッチすると音と動きが出ます`);
 }
 
 fruitImage.addEventListener("load", () => {
-  if (fruitImage.src.endsWith(fruits[currentIndex].image)) {
+  const currentImage = fruits[currentIndex].image;
+  if (currentImage && fruitImage.src.endsWith(currentImage)) {
     fruitImage.style.display = "block";
     fruitEmoji.style.display = "none";
   }
