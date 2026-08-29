@@ -1,18 +1,18 @@
 # PRJ-003 引き継ぎ
 
-更新日：2026-08-25
+更新日：2026-08-29
 
 ## 現在状態
 
-Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用済みで、APP-002／003／006の3本を表示している。各アプリには約2秒長押しでポータルへ戻る共通ホーム導線を追加済み。
+Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用済みで、APP-002／003／004／006の4本を表示している。各アプリには約2秒長押しでポータルへ戻る共通ホーム導線を追加済み。
 
-2026-08-25、共通ポータルとAPP-002／003／006へMicrosoft Clarityを導入した。PRJ-003全体でProject ID `y7wygqymd5`を1つだけ使用し、URLパス別の標準分析、セッション録画、ヒートマップで開始する。カスタムイベント、カスタムユーザーID、個人情報入力は追加していない。将来正式公開するAPPも同じProjectへ追加する。
+共通ポータルとAPP-002／003／004／006は、Microsoft Clarity Project ID `y7wygqymd5`を共通利用している。URLパス別の標準分析、セッション録画、ヒートマップのみを使用し、カスタムイベント、カスタムユーザーID、個人情報入力は追加していない。
 
 | ID | アプリ | 状態 | 次の確認 |
 |---|---|---|---|
 | APP-002 | シャボン玉タッチ | **MVP正式公開済み・実機確認PASS** | 効果判定待ち |
 | APP-003 | くだものポン！ | **正式MP3組み込み・Pages確認PASS・iPhone再確認待ち・正式公開保留** | iPhoneで4果物の音が出るか確認 |
-| APP-004 | 音あそびピアノ | **コード検証PASS・公開候補・iPhone実機確認待ち** | 実機複数指、指滑り、同時発音、音量 |
+| APP-004 | 音あそびピアノ | **正式公開済み・iPhone実機確認PASS** | 効果判定待ち |
 | APP-005 | できたよ！生活習慣 | Repository移行済み。主要実装あり | 3モード完走、ドラッグ、途中退出 |
 | APP-006 | カラフル花火 | **打ち上げ演出実装・公開URL検証PASS／実機確認待ち** | Before/After実機比較 |
 | APP-007 | どうぶつをタッチ！ | Repository移行済み。保護者機能あり | タイマー、統計、長押し、実機音声 |
@@ -118,9 +118,9 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - 公開画面でタップ直後の演出、720ms後の1段階循環、スクロールなし、コンソールエラー・警告なし
 - コード・配信検証後、iPhoneで4果物の音、語尾、音量・声質を再確認する
 
-## APP-004 公開前検証
+## APP-004 正式公開完了
 
-2026-08-25、APP-004「音あそびピアノ」の公開前安全性強化とブラウザ検証を実施し、iPhone実機確認へ進める公開候補とした。
+2026-08-29、公開前コード・Pages検証とiPhone実機確認の全項目PASSを合わせ、PM判断によりAPP-004「音あそびピアノ」を正式公開済みとした。
 
 - 既存の7鍵盤、複数pointer、指滑り、同時発音最大5音、音OFF保存、7回ごとの非表示カウント演出を維持
 - `visibilitychange`、`pagehide`、`pageshow`、BFCache復帰へ対応
@@ -132,8 +132,13 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - 実装commit `c9a0dd7a447ef91dbc68e8f9ac91c0ebf944978e`のGitHub Pagesデプロイrun #24がsuccess
 - 公開URLで7鍵盤、通常操作、共通ホーム導線、Clarity Project ID、相対パス、スクロール、コンソールをPASS
 - 公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
-- 実際の2本指以上、同時発音の聴感、音量、高速連打、中断・復帰、画面回転、reduced-motionはiPhone実機確認待ち
-- APP-004は正式公開判定前のため、共通ポータルのカード一覧にはまだ追加していない
+- iPhoneで2〜3本指、指滑り、同一鍵盤内の非再発音、5音同時発音の音量・聴感・表示をPASS
+- 高速連打、音OFF再訪保持、バックグラウンド復帰、音・押下・二重発音の残留なしをPASS
+- 縦横回転、safe area、Dynamic Island付近、画面端、視差効果低減をPASS
+- ホーム長押しの途中解除と約2秒完了、1〜2分継続利用、発熱・動作・音・操作遅延なしをPASS
+- 共通ポータルへAPP-004カードをID順で追加。既存3カードの構造・挙動は変更していない
+- 共通Clarityと共通ホーム導線は既存実装を維持
+- 正式公開実装commit：`c95b445`
 
 ## APP-006 公開完了
 
@@ -207,11 +212,29 @@ Afterは新仕様実装後、同程度の長さで上部・中央・下部タッ
 - APP-002公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-002-bubble-touch/`
 - APP-006公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-006-colorful-fireworks/`
 - APP-003公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-003-fruit-pop/`
-- APP-004公開候補URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
+- APP-004公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
+
+### 共通ポータル回帰テスト
+
+- 390×844：4カード、2列、横スクロールなし
+- 844×390：先頭行3列、標準縦スクロール、横スクロールなし
+- 1024×768：4列、横スクロールなし
+- APP-002／003／004／006の全カードが正しい相対URLへ遷移
+- 4アプリすべてに`../../shared/clarity.js`と`../../`向け共通ホーム導線あり
+- 4アプリすべてでホーム短押し非遷移、コンソールエラー・警告なし
+- APP-004の約2秒長押し完了・途中解除・safe areaはiPhone実機PASS
+- GitHub Pages反映確認は正式公開commitのデプロイ完了後に実施する
 
 ## 次の作業
 
-1. APP-004をiPhoneで実機確認し、正式公開可否をChatGPT／PM側で判定する。
-2. Clarity管理画面で初回セッション受信、URLパス別表示、ヒートマップ、セッション録画を確認する。
+1. 次の公開前検証候補としてAPP-005、APP-007、APP-008から優先対象をPM判断する。
+2. Clarity管理画面でAPP-004を含むURLパス別表示、ヒートマップ、セッション録画を確認する。
 3. APP-006の実機Before/After比較を完了する。
-4. APP-003の正式MP3について、iPhoneで4果物の音、語尾、音量・声質を確認する。
+4. APP-003の正式MP3について、必要ならiPhoneで4果物の音、語尾、音量・声質を再確認する。
+
+## 残課題
+
+- APP-004は正式公開済み。重大不具合がない限り効果判定待ちとして観察する
+- APP-005、APP-007、APP-008は公開前検証・実機確認が未完了
+- APP-006打ち上げ演出のBefore/After比較、APP-003正式MP3の追加確認は既存課題として継続
+- 最新の正式公開実装commitは`c95b445`。このhandoff更新を含む最終commit SHAは完了報告に記載する
