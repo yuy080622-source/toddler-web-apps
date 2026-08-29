@@ -10,7 +10,7 @@ GitHub Repositoryをコード、仕様、設計、変更履歴、引き継ぎ情
 |---|---|---|---|
 | APP-002 | シャボン玉タッチ | `apps/APP-002-bubble-touch/` | 実装済み・実機テスト待ち |
 | APP-003 | くだものポン！ | `apps/APP-003-fruit-pop/` | 実装済み・実機テスト待ち |
-| APP-004 | 音あそびピアノ | `apps/APP-004-sound-play-piano/` | 実装済み・実機テスト待ち |
+| APP-004 | 音あそびピアノ | `apps/APP-004-sound-play-piano/` | 正式公開済み・iPhone実機確認PASS |
 | APP-005 | できたよ！生活習慣 | `apps/APP-005-daily-habits-play/` | 実装済み・実機テスト待ち |
 | APP-006 | カラフル花火 | `apps/APP-006-colorful-fireworks/` | Codex公開前検証PASS・実機確認待ち |
 | APP-007 | どうぶつをタッチ！ | `apps/APP-007-animal-touch/` | 実装済み・実機テスト待ち |
@@ -24,11 +24,11 @@ GitHub Repositoryをコード、仕様、設計、変更履歴、引き継ぎ情
 - [引き継ぎ](docs/handoff.md)
 - [変更履歴](docs/changelog.md)
 
-## APP-006 公開URL
+## 公開URL
 
-GitHub Pages有効化後：
+- 共通ポータル：`https://yuy080622-source.github.io/toddler-web-apps/`
+- APP-004：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
 
-`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-006-colorful-fireworks/`
 
 ## ローカル確認
 
@@ -37,4 +37,3 @@ GitHub Pages有効化後：
 ```bash
 python3 -m http.server 8000
 ```
-

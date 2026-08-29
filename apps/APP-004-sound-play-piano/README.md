@@ -54,4 +54,7 @@ PRJ-003共通のMicrosoft Clarityを読み込み、URLパス別の標準分析�
 
 ## 公開状態
 
-2026年8月25日時点で、コード・ローカルブラウザ検証はPASSし、iPhone実機確認へ進める公開候補です。正式公開判定は、iPhoneで実際の2本指以上、指滑り、音量、高速連打、バックグラウンド復帰、画面回転、`prefers-reduced-motion`を確認した後に行います。
+2026年8月29日、コード・GitHub Pages検証に加え、iPhone実機で複数指、指滑り、5音同時発音、高速連打、音OFF保持、中断・復帰、画面回転、safe area、視差効果低減、ホーム長押し、継続利用、発熱・遅延を確認し、全項目PASSしました。APP-004は正式公開済みです。
+
+- 公開URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
+- 共通ポータル：`https://yuy080622-source.github.io/toddler-web-apps/`
