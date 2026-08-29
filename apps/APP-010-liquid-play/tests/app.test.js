@@ -1,0 +1,162 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
+class Target {
+  constructor() { this.listeners = new Map(); }
+  addEventListener(type, handler) {
+    if (!this.listeners.has(type)) this.listeners.set(type, []);
+    this.listeners.get(type).push(handler);
+  }
+  dispatch(type, event = {}) {
+    (this.listeners.get(type) || []).forEach((handler) => handler({
+      preventDefault() {}, stopPropagation() {}, pointerId: 1, clientX: 0, clientY: 0,
+      target: this, ...event
+    }));
+  }
+}
+
+function createEnvironment(reduced = false) {
+  let now = 0;
+  let viewport = { width: 390, height: 844 };
+  let nextFrame = 1;
+  const frames = new Map();
+  const windowTarget = new Target();
+  const documentTarget = new Target();
+  const playArea = new Target();
+  const button = new Target();
+  const status = { textContent: "" };
+  const media = new Target();
+  media.matches = reduced;
+  button.hidden = true;
+  button.disabled = false;
+  playArea.getBoundingClientRect = () => ({ ...viewport });
+  playArea.setPointerCapture = () => {};
+  const gradient = { addColorStop() {} };
+  const context2d = new Proxy({}, { get: (_, key) => {
+    if (key === "createLinearGradient" || key === "createRadialGradient") return () => gradient;
+    return () => {};
+  }, set: () => true });
+  const canvas = { width: 0, height: 0, style: {}, getContext: () => context2d };
+  const elements = { "liquid-canvas": canvas, "play-area": playArea, "motion-permission": button, status };
+  documentTarget.hidden = false;
+  documentTarget.getElementById = (id) => elements[id];
+  windowTarget.devicePixelRatio = 1;
+  windowTarget.orientation = 0;
+  windowTarget.setTimeout = (fn) => { windowTarget.pendingTimeout = fn; return 1; };
+  windowTarget.clearTimeout = () => { windowTarget.pendingTimeout = null; };
+  windowTarget.DeviceOrientationEvent = function DeviceOrientationEvent() {};
+  windowTarget.screen = { orientation: { angle: 0 } };
+  const sandbox = {
+    window: windowTarget,
+    document: documentTarget,
+    screen: windowTarget.screen,
+    DeviceOrientationEvent: windowTarget.DeviceOrientationEvent,
+    matchMedia: () => media,
+    performance: { now: () => now },
+    clearTimeout: () => { windowTarget.pendingTimeout = null; },
+    requestAnimationFrame: (callback) => { const id = nextFrame++; frames.set(id, callback); return id; },
+    cancelAnimationFrame: (id) => frames.delete(id),
+    Math, Number, Object, Map, console
+  };
+  vm.createContext(sandbox);
+  const source = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+  vm.runInContext(source, sandbox, { filename: "app.js" });
+
+  function step(count = 1, milliseconds = 16.667) {
+    for (let i = 0; i < count; i += 1) {
+      now += milliseconds;
+      const pending = [...frames.entries()];
+      frames.clear();
+      pending.forEach(([, callback]) => callback(now));
+    }
+  }
+  return { sandbox, playArea, button, documentTarget, windowTarget, media, step,
+    setViewport: (width, height) => { viewport = { width, height }; windowTarget.dispatch("resize"); },
+    pendingFrames: () => frames.size };
+}
+
+const env = createEnvironment();
+const debug = env.sandbox.window.__LIQUID_PLAY_DEBUG__;
+assert.ok(debug, "debug inspection API exists");
+let state = debug.snapshot();
+assert.equal(state.blobCount, 3, "three blobs are stable");
+assert.equal(env.pendingFrames(), 1, "exactly one animation frame is pending");
+
+const startX = state.blobs.map((blob) => blob.x);
+env.windowTarget.dispatch("deviceorientation", { gamma: 20, beta: 0 });
+env.windowTarget.dispatch("deviceorientation", { gamma: 20, beta: 0 });
+env.windowTarget.dispatch("deviceorientation", { gamma: 20, beta: 0 });
+env.step(120);
+state = debug.snapshot();
+assert.ok(state.blobs.every((blob, index) => blob.x > startX[index]), "tilt moves blobs toward gravity");
+assert.equal(state.sensorState, "active", "valid sensor samples activate tilt input");
+assert.ok(state.blobs.every((blob) => blob.x >= blob.radius * 0.8 && blob.x <= state.width - blob.radius * 0.8), "blobs remain horizontal bounds");
+
+debug.simulateTilt(0, 0);
+env.step(90);
+const beforeHold = debug.snapshot();
+env.playArea.dispatch("pointerdown", { pointerId: 1, clientX: 20, clientY: 800 });
+env.step(15);
+assert.equal(debug.snapshot().holdActive, true, "long press activates after threshold");
+env.playArea.dispatch("pointerdown", { pointerId: 2, clientX: 40, clientY: 780 });
+env.step(50);
+state = debug.snapshot();
+assert.equal(state.pointerCount, 2, "multiple pointers are tracked without force addition");
+assert.ok(state.force.x < 0 && state.force.y > 0, "centroid creates one stable force vector");
+env.playArea.dispatch("pointercancel", { pointerId: 1 });
+env.playArea.dispatch("pointerup", { pointerId: 2 });
+const velocityAtRelease = Math.hypot(state.blobs[0].vx, state.blobs[0].vy);
+env.step(1);
+assert.ok(Math.hypot(debug.snapshot().blobs[0].vx, debug.snapshot().blobs[0].vy) > 0 && velocityAtRelease > 0, "release preserves short inertia");
+
+for (let i = 0; i < 60; i += 1) {
+  env.playArea.dispatch("pointerdown", { pointerId: i + 10, clientX: i % 2 ? 380 : 10, clientY: 400 });
+  env.playArea.dispatch("pointerup", { pointerId: i + 10 });
+}
+env.step(10);
+assert.equal(debug.snapshot().pointerCount, 0, "rapid taps leave no pointer state");
+assert.equal(env.pendingFrames(), 1, "rapid taps do not duplicate animation loop");
+
+env.setViewport(844, 390);
+env.step(5);
+state = debug.snapshot();
+assert.deepEqual([state.width, state.height], [844, 390], "landscape boundary recalculated");
+assert.ok(state.blobs.every((blob) => blob.x >= 0 && blob.x <= 844 && blob.y >= 0 && blob.y <= 390), "rotation keeps blobs visible");
+env.setViewport(390, 844);
+env.step(5);
+assert.ok(debug.snapshot().blobs.every((blob) => blob.x >= 0 && blob.x <= 390 && blob.y >= 0 && blob.y <= 844), "portrait restoration keeps blobs visible");
+
+env.documentTarget.hidden = true;
+env.documentTarget.dispatch("visibilitychange");
+assert.equal(debug.snapshot().running, false, "hidden page stops animation");
+assert.equal(env.pendingFrames(), 0, "hidden page has no pending frame");
+env.documentTarget.hidden = false;
+env.documentTarget.dispatch("visibilitychange");
+env.windowTarget.dispatch("pageshow");
+assert.equal(env.pendingFrames(), 1, "visibility and pageshow cannot double-start loop");
+
+env.step(7200); // two simulated minutes at 60fps
+state = debug.snapshot();
+assert.equal(state.blobCount, 3, "two-minute simulation does not grow blob count");
+assert.equal(env.pendingFrames(), 1, "two-minute simulation keeps one loop");
+assert.ok(state.blobs.every((blob) => Number.isFinite(blob.x) && Number.isFinite(blob.y)), "long run stays finite");
+
+const reducedEnv = createEnvironment(true);
+const reducedDebug = reducedEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+reducedDebug.simulateTilt(1, 0);
+const reducedStart = reducedDebug.snapshot().blobs[0].x;
+reducedEnv.step(120);
+const reducedState = reducedDebug.snapshot();
+assert.equal(reducedState.reducedMotion, true, "reduced motion is detected");
+assert.ok(reducedState.blobs[0].x > reducedStart, "reduced motion keeps play active");
+assert.ok(reducedState.blobs[0].vx <= 36.01, "reduced motion limits speed");
+
+const fallbackEnv = createEnvironment();
+fallbackEnv.windowTarget.pendingTimeout();
+assert.equal(fallbackEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().sensorState, "fallback", "missing sensor samples fall back without error");
+
+console.log("APP-010 automated tests: PASS");
