@@ -223,7 +223,8 @@ Afterは新仕様実装後、同程度の長さで上部・中央・下部タッ
 - 4アプリすべてに`../../shared/clarity.js`と`../../`向け共通ホーム導線あり
 - 4アプリすべてでホーム短押し非遷移、コンソールエラー・警告なし
 - APP-004の約2秒長押し完了・途中解除・safe areaはiPhone実機PASS
-- GitHub Pages反映確認は正式公開commitのデプロイ完了後に実施する
+- GitHub Pages run #26はhandoff commit `7629c27`でsuccess
+- 公開ポータルで4カードの表示順・リンク、全4APPの共通ホーム・Clarity相対参照、横スクロールなし、コンソールエラー・警告なしをPASS
 
 ## 次の作業
 
