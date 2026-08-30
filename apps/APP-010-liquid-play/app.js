@@ -54,7 +54,10 @@
       wobble: 0,
       tailLag: 0,
       reversing: false,
+      reversalPhase: "normal",
+      reversalPhaseStartedAt: 0,
       pendingAngle: 0,
+      neutralMix: 0,
       faceTilt: 0,
       idlePhase: index * 2.17,
       idleX: 0,
@@ -321,38 +324,60 @@
       let turn = angleDifference(targetAngle, blob.shapeAngle);
       const reversalThreshold = 2.32;
       const minimumReversalStretch = reducedMotion ? 0.001 : 0.055;
-      if (!blob.reversing && moving && Math.abs(turn) >= reversalThreshold && blob.stretch >= minimumReversalStretch) {
+      if (blob.reversalPhase === "normal" && moving && Math.abs(turn) >= reversalThreshold && blob.stretch >= minimumReversalStretch) {
         blob.reversing = true;
+        blob.reversalPhase = "shrinking";
+        blob.reversalPhaseStartedAt = now;
         blob.pendingAngle = targetAngle;
       }
       if (blob.reversing && moving) blob.pendingAngle = targetAngle;
 
       const accelerationPull = reducedMotion ? 0 : clamp(Math.hypot(force.x, force.y) * 0.055, 0, 0.055);
-      let targetStretch = blob.reversing ? 0 : reducedMotion
+      const inReversal = blob.reversalPhase !== "normal";
+      const targetStretch = inReversal ? 0 : reducedMotion
         ? clamp(speed / 600, 0, 0.075)
         : clamp(speed / 220 + accelerationPull + Math.abs(turn) * 0.023, 0, 0.475);
       let stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.108) : (reducedMotion ? 0.025 : 0.023);
-      if (blob.reversing) stretchResponse = reducedMotion ? 0.15 : 0.12;
+      if (inReversal) stretchResponse = reducedMotion ? 0.2 : 0.16;
       blob.stretch += (targetStretch - blob.stretch) * stretchResponse;
-      const targetTail = blob.reversing || reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.145 + blob.stretch * 0.29, 0, 0.235);
-      const tailResponse = blob.reversing ? (reducedMotion ? 0.18 : 0.13) : targetTail > blob.tailLag ? 0.078 : 0.019;
+      const targetTail = inReversal || reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.148 + blob.stretch * 0.30, 0, 0.24);
+      const tailResponse = inReversal ? (reducedMotion ? 0.24 : 0.19) : targetTail > blob.tailLag ? 0.078 : 0.018;
       blob.tailLag += (targetTail - blob.tailLag) * tailResponse;
 
-      const reversalReady = blob.stretch <= (reducedMotion ? 0.0003 : 0.025)
-        && blob.tailLag <= (reducedMotion ? 0.002 : 0.014);
-      if (blob.reversing && reversalReady) {
-        blob.shapeAngle = blob.pendingAngle;
-        blob.reversing = false;
+      const neutralTarget = inReversal ? 1 : 0;
+      blob.neutralMix += (neutralTarget - blob.neutralMix) * (inReversal ? 0.22 : 0.085);
+      const turnWobble = inReversal || reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.09, -0.13, 0.13);
+      const wobbleResponse = inReversal ? 0.28 : Math.abs(turnWobble) > Math.abs(blob.wobble) ? 0.11 : 0.042;
+      blob.wobble += (turnWobble - blob.wobble) * wobbleResponse;
+
+      const neutralReady = blob.stretch <= (reducedMotion ? 0.00025 : 0.006)
+        && blob.tailLag <= (reducedMotion ? 0.0004 : 0.003)
+        && Math.abs(blob.wobble) <= (reducedMotion ? 0.0002 : 0.003)
+        && blob.neutralMix >= 0.96;
+      if (blob.reversalPhase === "shrinking" && neutralReady) {
+        blob.reversalPhase = "neutral";
+        blob.reversalPhaseStartedAt = now;
+        blob.stretch = 0;
+        blob.tailLag = 0;
         blob.wobble = 0;
+        blob.neutralMix = 1;
+      } else if (blob.reversalPhase === "neutral" && now - blob.reversalPhaseStartedAt >= (reducedMotion ? 50 : 84)) {
+        blob.shapeAngle = blob.pendingAngle;
+        blob.reversalPhase = "switched";
+        blob.reversalPhaseStartedAt = now;
+        blob.stretch = 0;
+        blob.tailLag = 0;
+        blob.wobble = 0;
+        blob.neutralMix = 1;
         turn = 0;
-        targetStretch = 0;
-      } else if (!blob.reversing) {
+      } else if (blob.reversalPhase === "switched" && now - blob.reversalPhaseStartedAt >= (reducedMotion ? 17 : 34)) {
+        blob.reversalPhase = "normal";
+        blob.reversing = false;
+        blob.reversalPhaseStartedAt = now;
+      } else if (blob.reversalPhase === "normal") {
         const angleResponse = reducedMotion ? 0.045 : 0.058;
         blob.shapeAngle += turn * angleResponse;
       }
-
-      const turnWobble = blob.reversing || reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.09, -0.13, 0.13);
-      blob.wobble += (turnWobble - blob.wobble) * (Math.abs(turnWobble) > Math.abs(blob.wobble) ? 0.11 : 0.042);
       const targetFaceTilt = reducedMotion ? 0 : clamp(blob.vy / 126 * 0.12, -0.12, 0.12);
       blob.faceTilt += (targetFaceTilt - blob.faceTilt) * 0.08;
       const idleAmount = reducedMotion ? 0.008 : 0.034;
@@ -360,20 +385,23 @@
       const idleTargetY = Math.sin(now / 1900 + blob.idlePhase * 1.43) * idleAmount * 0.72;
       blob.idleX += (idleTargetX - blob.idleX) * 0.018;
       blob.idleY += (idleTargetY - blob.idleY) * 0.018;
-      const leanTarget = reducedMotion ? 0 : Math.sin(now / 2300 + blob.idlePhase * 0.81) * 0.032;
-      blob.poolLean += (leanTarget - blob.poolLean) * 0.014;
+      const leanTarget = inReversal || reducedMotion ? 0 : Math.sin(now / 2300 + blob.idlePhase * 0.81) * 0.032;
+      blob.poolLean += (leanTarget - blob.poolLean) * (inReversal ? 0.18 : 0.014);
     });
   }
 
   function drawBlob(blob) {
-    const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1.06);
-    const stretch = blob.stretch;
-    const front = blob.radius * (1 + blob.organicFront + stretch * 2.12 - squash * 0.36 + blob.idleX);
-    const back = blob.radius * (1 + blob.organicBack + stretch * 0.64 + blob.tailLag + squash * 0.31 - blob.idleX * 0.45);
-    const vertical = Math.max(blob.radius * (reducedMotion ? 0.84 : 0.72), blob.radius * (blob.organicTall - stretch * 0.48 + squash + blob.idleY));
-    const wobble = blob.wobble * blob.radius;
-    const topShift = blob.radius * (blob.organicTop + blob.poolLean) + wobble * 0.35;
-    const bottomShift = blob.radius * (blob.organicBottom - blob.poolLean * 0.7) - wobble * 0.45;
+    const neutral = blob.neutralMix;
+    const directional = 1 - neutral;
+    const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1.09) * (1 - neutral * 0.7);
+    const stretch = blob.stretch * directional;
+    const front = blob.radius * (1 + blob.organicFront * directional + stretch * 2.12 - squash * 0.36 + blob.idleX * directional);
+    const back = blob.radius * (1 + blob.organicBack * directional + stretch * 0.64 + blob.tailLag * directional + squash * 0.33 - blob.idleX * 0.45 * directional);
+    const organicTall = 1 + (blob.organicTall - 1) * directional;
+    const vertical = Math.max(blob.radius * (reducedMotion ? 0.84 : 0.72), blob.radius * (organicTall - stretch * 0.48 + squash + blob.idleY * directional));
+    const wobble = blob.wobble * blob.radius * directional;
+    const topShift = blob.radius * (blob.organicTop + blob.poolLean) * directional + wobble * 0.35;
+    const bottomShift = blob.radius * (blob.organicBottom - blob.poolLean * 0.7) * directional - wobble * 0.45;
     context.save();
     context.translate(blob.x, blob.y);
     context.rotate(blob.shapeAngle);
@@ -471,7 +499,10 @@
     holdStart = 0;
     blobs.forEach((blob) => {
       blob.reversing = false;
+      blob.reversalPhase = "normal";
+      blob.reversalPhaseStartedAt = 0;
       blob.pendingAngle = blob.shapeAngle;
+      blob.neutralMix = 0;
       blob.wobble = 0;
     });
   }
@@ -496,8 +527,8 @@
   window.__LIQUID_PLAY_DEBUG__ = Object.freeze({
     snapshot: () => ({
       blobCount: blobs.length,
-      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, pendingAngle, faceTilt, idleX, idleY, poolLean }) => ({
-        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, pendingAngle, faceTilt, idleX, idleY, poolLean
+      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, reversalPhase, reversalPhaseStartedAt, pendingAngle, neutralMix, faceTilt, idleX, idleY, poolLean }) => ({
+        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, reversalPhase, reversalPhaseStartedAt, pendingAngle, neutralMix, faceTilt, idleX, idleY, poolLean
       })),
       force: { ...force },
       sensorState,

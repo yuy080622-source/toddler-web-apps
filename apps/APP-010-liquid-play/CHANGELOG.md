@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-08-30 — 反転時のneutral形状を明確化
+
+- 反転を`shrinking`、`neutral`、`switched`、`normal`のphaseへ段階化
+- shrinking中は旧`shapeAngle`を完全固定し、`stretch`、`tailLag`、`wobble`を厳しい閾値まで減衰
+- neutralでは伸び・尾・揺れをゼロに固定し、固定の前後非対称、上下差、`poolLean`、低周波方向差を描画から除外
+- ほぼ丸いneutral形を通常時約84ms、reduced-motion時約50ms維持してから、新方向へゼロ伸長のまま一度だけ角度を切替
+- switched形を短く維持し、次フレーム以降にneutral形を解きながら再伸長
+- 停止復元、後端遅れ、接触時の横広がりを小幅強化し、伸び上限と速度1.5倍は維持
+- 反転途中の方向変更・長押し解除、全反転方向、neutral保持時間と形状値を回帰テストへ追加
+
 ## 2026-08-30 — 反転時の形状回転修正
 
 - 約133度以上の方向差をほぼ反対方向の切り返しとして検出
