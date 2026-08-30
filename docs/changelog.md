@@ -10,6 +10,7 @@
 - 既存Microsoft Clarityの共通ファイル、測定ID、対象ページを変更せず併存
 - APP-005／007／008と正式公開前のAPP-010は対象外
 - 将来の新規APPは正式公開時に`../../shared/ga4.js`を1回追加する方針を共通設計へ記録
+- 実装commit `4ecf672b612f17e30e7873d3b6478fe195694534`のGitHub Pagesデプロイ成功後、公開5ページでGoogle tag／Clarity各1回、URLパス、390×844、コンソールエラー・警告なしを確認
 
 ## 2026-08-30 — APP-010 反転neutral形状の再改善
 

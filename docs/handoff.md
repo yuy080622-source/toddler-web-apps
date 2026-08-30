@@ -19,7 +19,7 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - 計測：GA4標準ページ計測のみ。カスタムイベント、ユーザーID、入力内容、センサー値、タッチ位置の送信なし
 - Clarity：既存`shared/clarity.js`と測定対象を変更せず併存
 - テスト：測定ID、5ページの共通参照、二重読込なし、Clarity残存、URLパス、既存JavaScript構文とAPP-010回帰を確認
-- 公開反映状況：commit・Pages反映後に追記する
+- 公開反映状況：実装commit `4ecf672b612f17e30e7873d3b6478fe195694534`のPages build／deploy成功。公開5ページでGoogle tagとClarityの各1回読込、URLパス、390×844、コンソールをPASS
 - PM確認：GA4管理画面のRealtime受信はPM確認待ち
 - 残課題・保留：新規APPは正式公開時に`shared/ga4.js`を1回参照する。未公開APPへは先行導入しない
 
