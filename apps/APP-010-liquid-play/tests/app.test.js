@@ -99,6 +99,7 @@ assert.ok(state.blobs.every((blob) => blob.x >= blob.radius * 0.8 && blob.x <= s
 assert.ok(state.blobs.some((blob) => blob.stretch > 0.09), "moving blobs have stronger travel-direction stretch");
 assert.ok(state.blobs.some((blob) => blob.tailLag > 0.01), "rear shape follows with a delayed liquid tail");
 assert.ok(state.blobs.some((blob) => Math.abs(blob.idleX) > 0.001 || Math.abs(blob.idleY) > 0.001), "slow irregular resting shape is active");
+assert.ok(state.blobs.some((blob) => Math.abs(blob.poolLean) > 0.001), "asymmetric liquid-pool lean remains subtle and active");
 assert.ok(env.drawCalls.filter(([name]) => name === "bezierCurveTo").length >= 6, "soft teardrop paths are drawn");
 assert.ok(env.drawCalls.filter(([name]) => name === "ellipse").length >= 6, "two face eyes are drawn on every blob");
 assert.ok(env.drawCalls.filter(([name]) => name === "quadraticCurveTo").length >= 3, "small smiles are drawn with the blob transform");
@@ -184,6 +185,7 @@ assert.ok(reducedState.blobs[0].x > reducedStart, "reduced motion keeps play act
 assert.ok(reducedState.blobs[0].vx <= 36.01, "reduced motion limits speed");
 assert.equal(reducedState.blobs[0].tailLag, 0, "reduced motion disables the delayed tail");
 assert.ok(Math.abs(reducedState.blobs[0].idleX) < 0.009, "reduced motion keeps idle irregularity subtle");
+assert.equal(reducedState.blobs[0].poolLean, 0, "reduced motion disables asymmetric pool leaning");
 
 const fallbackEnv = createEnvironment();
 fallbackEnv.windowTarget.pendingTimeout();

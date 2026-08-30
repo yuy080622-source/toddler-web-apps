@@ -55,7 +55,13 @@
       tailLag: 0,
       idlePhase: index * 2.17,
       idleX: 0,
-      idleY: 0
+      idleY: 0,
+      poolLean: 0,
+      organicTop: [0.09, -0.075, 0.065][index],
+      organicBottom: [-0.07, 0.085, -0.09][index],
+      organicFront: [0.07, 0.03, 0.06][index],
+      organicBack: [0.02, 0.08, 0.04][index],
+      organicTall: [0.96, 0.93, 0.97][index]
     }));
     keepInside();
   }
@@ -315,28 +321,32 @@
       const accelerationPull = reducedMotion ? 0 : clamp(Math.hypot(force.x, force.y) * 0.055, 0, 0.055);
       const targetStretch = reducedMotion
         ? clamp(speed / 600, 0, 0.075)
-        : clamp(speed / 245 + accelerationPull + Math.abs(turn) * 0.018, 0, 0.42);
-      const stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.105) : (reducedMotion ? 0.025 : 0.032);
+        : clamp(speed / 225 + accelerationPull + Math.abs(turn) * 0.022, 0, 0.46);
+      const stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.108) : (reducedMotion ? 0.025 : 0.026);
       blob.stretch += (targetStretch - blob.stretch) * stretchResponse;
       const turnWobble = reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.09, -0.13, 0.13);
       blob.wobble += (turnWobble - blob.wobble) * (Math.abs(turnWobble) > Math.abs(blob.wobble) ? 0.11 : 0.042);
-      const targetTail = reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.12 + blob.stretch * 0.22, 0, 0.18);
-      blob.tailLag += (targetTail - blob.tailLag) * (targetTail > blob.tailLag ? 0.075 : 0.026);
-      const idleAmount = reducedMotion ? 0.008 : 0.026;
+      const targetTail = reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.14 + blob.stretch * 0.27, 0, 0.22);
+      blob.tailLag += (targetTail - blob.tailLag) * (targetTail > blob.tailLag ? 0.078 : 0.021);
+      const idleAmount = reducedMotion ? 0.008 : 0.034;
       const idleTargetX = Math.sin(now / 1450 + blob.idlePhase) * idleAmount;
       const idleTargetY = Math.sin(now / 1900 + blob.idlePhase * 1.43) * idleAmount * 0.72;
       blob.idleX += (idleTargetX - blob.idleX) * 0.018;
       blob.idleY += (idleTargetY - blob.idleY) * 0.018;
+      const leanTarget = reducedMotion ? 0 : Math.sin(now / 2300 + blob.idlePhase * 0.81) * 0.032;
+      blob.poolLean += (leanTarget - blob.poolLean) * 0.014;
     });
   }
 
   function drawBlob(blob) {
     const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1);
     const stretch = blob.stretch;
-    const front = blob.radius * (1 + stretch * 1.82 - squash * 0.32 + blob.idleX);
-    const back = blob.radius * (1 + stretch * 0.52 + blob.tailLag + squash * 0.24 - blob.idleX * 0.45);
-    const vertical = blob.radius * (1 - stretch * 0.46 + squash * 0.82 + blob.idleY);
+    const front = blob.radius * (1 + blob.organicFront + stretch * 2.05 - squash * 0.36 + blob.idleX);
+    const back = blob.radius * (1 + blob.organicBack + stretch * 0.62 + blob.tailLag + squash * 0.28 - blob.idleX * 0.45);
+    const vertical = Math.max(blob.radius * (reducedMotion ? 0.84 : 0.72), blob.radius * (blob.organicTall - stretch * 0.48 + squash + blob.idleY));
     const wobble = blob.wobble * blob.radius;
+    const topShift = blob.radius * (blob.organicTop + blob.poolLean) + wobble * 0.35;
+    const bottomShift = blob.radius * (blob.organicBottom - blob.poolLean * 0.7) - wobble * 0.45;
     context.save();
     context.translate(blob.x, blob.y);
     context.rotate(blob.shapeAngle);
@@ -351,10 +361,10 @@
     context.fillStyle = gradient;
     context.beginPath();
     context.moveTo(front, 0);
-    context.bezierCurveTo(front, -vertical * 0.552, front * 0.552, -vertical, wobble * 0.35, -vertical);
-    context.bezierCurveTo(-back * 0.50 + wobble, -vertical, -back, -vertical * 0.50, -back, wobble * 0.18);
-    context.bezierCurveTo(-back, vertical * 0.58, -back * 0.52 - wobble, vertical, -wobble * 0.45, vertical);
-    context.bezierCurveTo(front * 0.552, vertical, front, vertical * 0.552, front, 0);
+    context.bezierCurveTo(front, -vertical * 0.53, front * 0.54, -vertical, topShift, -vertical);
+    context.bezierCurveTo(-back * 0.48 + wobble, -vertical * 1.02, -back, -vertical * 0.48, -back, wobble * 0.18);
+    context.bezierCurveTo(-back, vertical * 0.61, -back * 0.50 - wobble, vertical * 0.98, bottomShift, vertical);
+    context.bezierCurveTo(front * 0.56, vertical * 1.02, front, vertical * 0.54, front, 0);
     context.closePath();
     context.fill();
     context.shadowColor = "transparent";
@@ -368,21 +378,21 @@
 
   function drawFace(blob, front, back, vertical, squash) {
     const faceCenter = (front - back) * 0.055 - blob.tailLag * blob.radius * 0.08;
-    const eyeGap = blob.radius * (0.25 + blob.stretch * 0.46);
+    const eyeGap = blob.radius * (0.22 + blob.stretch * 0.40);
     const eyeY = -vertical * 0.08;
-    const eyeRadiusX = Math.max(2.4, blob.radius * 0.038 * (1 + blob.stretch * 0.22));
-    const eyeRadiusY = Math.max(2.2, blob.radius * 0.046 * (1 - squash * 0.65));
-    context.globalAlpha = 0.58;
+    const eyeRadiusX = Math.max(2.1, blob.radius * 0.032 * (1 + blob.stretch * 0.20));
+    const eyeRadiusY = Math.max(2, blob.radius * 0.039 * (1 - squash * 0.65));
+    context.globalAlpha = 0.46;
     context.fillStyle = "#244a45";
     context.beginPath();
     context.ellipse(faceCenter - eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
     context.ellipse(faceCenter + eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
     context.fill();
     const mouthY = vertical * 0.18;
-    const mouthWidth = blob.radius * (0.15 + blob.stretch * 0.18);
+    const mouthWidth = blob.radius * (0.13 + blob.stretch * 0.15);
     const surprise = clamp((blob.contact + blob.wallContact) * 4, 0, 1);
     context.strokeStyle = "#244a45";
-    context.lineWidth = Math.max(2, blob.radius * 0.025);
+    context.lineWidth = Math.max(1.7, blob.radius * 0.021);
     context.lineCap = "round";
     context.beginPath();
     if (surprise > 0.34) {
@@ -450,8 +460,8 @@
   window.__LIQUID_PLAY_DEBUG__ = Object.freeze({
     snapshot: () => ({
       blobCount: blobs.length,
-      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY }) => ({
-        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY
+      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY, poolLean }) => ({
+        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY, poolLean
       })),
       force: { ...force },
       sensorState,
