@@ -22,7 +22,7 @@ python3 -m http.server 8000
 - `assets/images/`：任意の果物画像（現在は未配置）
 - `assets/sounds/`：正式な果物名MP3
 
-外部ライブラリ、広告、通信、アクセス解析は使用していません。音声設定だけを端末の `localStorage` に保存します。
+外部ライブラリと広告は使用していません。音声設定だけを端末の`localStorage`に保存します。利用分析はPRJ-003共通のMicrosoft ClarityとGoogle Analytics 4測定ID`G-M5FPMG34LE`を使用し、GA4は標準ページ計測のみです。カスタムイベント、ユーザーID、タッチ位置、入力内容は送信せず、分析スクリプトを取得できない場合も果物・音・操作は独立して動作します。
 
 ## 素材の差し替え
 

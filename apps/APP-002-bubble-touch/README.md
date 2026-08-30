@@ -94,6 +94,10 @@ Repositoryの`main`ブランチ `/ (root)` がGitHub Pagesで公開されてい�
 
 - APP-002確認URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-002-bubble-touch/`
 
+## 利用分析
+
+PRJ-003共通のMicrosoft ClarityとGoogle Analytics 4測定ID`G-M5FPMG34LE`を共通スクリプトから読み込みます。GA4は標準ページ計測のみで、カスタムイベント、ユーザーID、タッチ位置、入力内容は送信しません。分析スクリプトを取得できない環境でも、泡・音・操作は独立して動作します。
+
 ## 公開前検証（2026-08-23）
 
 コード上の公開阻害事項を修正し、次を確認しました。

@@ -8,6 +8,21 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 
 共通ポータルとAPP-002／003／004／006は、Microsoft Clarity Project ID `y7wygqymd5`を共通利用している。URLパス別の標準分析、セッション録画、ヒートマップのみを使用し、カスタムイベント、カスタムユーザーID、個人情報入力は追加していない。
 
+共通ポータルと正式公開済みのAPP-002／003／004／006は、Google Analytics 4測定ID `G-M5FPMG34LE`も`shared/ga4.js`から共通利用する。GA4は標準ページ計測のみで、カスタムイベント、カスタムユーザーID、入力内容の送信は追加していない。APP-005／007／008と正式公開前のAPP-010は対象外。
+
+### 2026-08-30 GA4標準計測導入
+
+- 変更ファイル：`shared/ga4.js`、共通ポータルとAPP-002／003／004／006の各`index.html`、公開APPのREADME／CHANGELOG、共通仕様・設計・handoff・changelog
+- 共通化：測定IDとGoogle tag初期化を`shared/ga4.js`へ集約し、ルートと公開APPから相対パスで1回だけ参照
+- 対象：共通ポータル、APP-002、APP-003、APP-004、APP-006
+- 対象外：未公開のAPP-005、APP-007、APP-008、正式公開前のAPP-010
+- 計測：GA4標準ページ計測のみ。カスタムイベント、ユーザーID、入力内容、センサー値、タッチ位置の送信なし
+- Clarity：既存`shared/clarity.js`と測定対象を変更せず併存
+- テスト：測定ID、5ページの共通参照、二重読込なし、Clarity残存、URLパス、既存JavaScript構文とAPP-010回帰を確認
+- 公開反映状況：commit・Pages反映後に追記する
+- PM確認：GA4管理画面のRealtime受信はPM確認待ち
+- 残課題・保留：新規APPは正式公開時に`shared/ga4.js`を1回参照する。未公開APPへは先行導入しない
+
 | ID | アプリ | 状態 | 次の確認 |
 |---|---|---|---|
 | APP-002 | シャボン玉タッチ | **MVP正式公開済み・実機確認PASS** | 効果判定待ち |
