@@ -80,6 +80,53 @@ function createEnvironment(reduced = false) {
     pendingFrames: () => frames.size };
 }
 
+function angularDistance(a, b) {
+  return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+}
+
+function exerciseReversal(from, to, label, reduced = false) {
+  const reversalEnv = createEnvironment(reduced);
+  const reversalDebug = reversalEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+  reversalEnv.setViewport(1024, 768);
+  reversalDebug.simulateTilt(from[0], from[1]);
+  reversalEnv.step(100);
+  const before = reversalDebug.snapshot().blobs[0];
+  assert.ok(before.stretch >= (reduced ? 0.004 : 0.08), `${label}: initial direction creates visible stretch (${before.stretch})`);
+  reversalDebug.simulateTilt(to[0], to[1]);
+  let sawReversal = false;
+  let heldOldAngle = true;
+  let minimumStretch = before.stretch;
+  let switched = false;
+  let reextended = false;
+  let reversalStartAngle = before.shapeAngle;
+  let previousAngle = before.shapeAngle;
+  let maximumAngleStep = 0;
+  for (let frame = 0; frame < 320; frame += 1) {
+    reversalEnv.step(1);
+    const blob = reversalDebug.snapshot().blobs[0];
+    maximumAngleStep = Math.max(maximumAngleStep, angularDistance(blob.shapeAngle, previousAngle));
+    previousAngle = blob.shapeAngle;
+    if (blob.reversing && !switched) {
+      if (!sawReversal) reversalStartAngle = blob.shapeAngle;
+      sawReversal = true;
+      minimumStretch = Math.min(minimumStretch, blob.stretch);
+      heldOldAngle &&= angularDistance(blob.shapeAngle, reversalStartAngle) < 0.012;
+    } else if (sawReversal && !switched) {
+      switched = true;
+    } else if (switched && blob.stretch > (reduced ? 0.004 : 0.07)) {
+      reextended = true;
+    }
+    assert.ok(Number.isFinite(blob.shapeAngle) && Number.isFinite(blob.stretch), `${label}: reversal state stays finite`);
+  }
+  assert.ok(sawReversal, `${label}: opposite motion enters reversal state`);
+  assert.ok(heldOldAngle, `${label}: elongated body keeps its old angle while shrinking`);
+  assert.ok(minimumStretch <= (reduced ? 0.0005 : 0.03), `${label}: stretch passes close to the liquid-pool shape (${minimumStretch})`);
+  assert.ok(switched && reextended, `${label}: direction switches only before re-extension`);
+  assert.ok(maximumAngleStep > 2.3, `${label}: direction changes as one near-round state change, not rotating while elongated`);
+  assert.ok(reversalDebug.snapshot().blobs.every((blob) => Math.abs(blob.faceTilt) <= 0.121), `${label}: face stays upright instead of rotating 180 degrees`);
+  return { env: reversalEnv, debug: reversalDebug };
+}
+
 const env = createEnvironment();
 const debug = env.sandbox.window.__LIQUID_PLAY_DEBUG__;
 assert.ok(debug, "debug inspection API exists");
@@ -174,6 +221,73 @@ contactEnv.setViewport(180, 180);
 contactEnv.step(5);
 assert.ok(contactEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().blobs.some((blob) => blob.contact > 0), "blob overlap creates mutual liquid compression");
 
+exerciseReversal([-1, 0], [1, 0], "left to right");
+exerciseReversal([1, 0], [-1, 0], "right to left");
+exerciseReversal([0, -1], [0, 1], "up to down");
+exerciseReversal([0, 1], [0, -1], "down to up");
+exerciseReversal([-0.8, -0.8], [0.8, 0.8], "diagonal reversal");
+
+const quarterTurnEnv = createEnvironment();
+const quarterTurnDebug = quarterTurnEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+quarterTurnEnv.setViewport(1024, 768);
+quarterTurnDebug.simulateTilt(-1, 0);
+quarterTurnEnv.step(90);
+quarterTurnDebug.simulateTilt(0, 1);
+let quarterTurnReversal = false;
+for (let frame = 0; frame < 100; frame += 1) {
+  quarterTurnEnv.step(1);
+  quarterTurnReversal ||= quarterTurnDebug.snapshot().blobs[0].reversing;
+}
+assert.equal(quarterTurnReversal, false, "a roughly 90-degree turn keeps flowing without an unnecessary round reset");
+
+const alternatingEnv = createEnvironment();
+const alternatingDebug = alternatingEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+alternatingEnv.setViewport(1024, 768);
+for (let cycle = 0; cycle < 18; cycle += 1) {
+  alternatingDebug.simulateTilt(cycle % 2 ? -1 : 1, 0);
+  alternatingEnv.step(18);
+}
+const alternatingState = alternatingDebug.snapshot();
+assert.equal(alternatingState.blobCount, 3, "rapid repeated reversals keep exactly three blobs");
+assert.equal(alternatingEnv.pendingFrames(), 1, "rapid repeated reversals keep one RAF");
+assert.ok(alternatingState.blobs.every((blob) => [blob.x, blob.y, blob.stretch, blob.shapeAngle].every(Number.isFinite)), "rapid repeated reversals do not create NaN");
+assert.ok(alternatingState.blobs.every((blob) => blob.x >= 0 && blob.x <= 1024 && blob.y >= 0 && blob.y <= 768), "rapid repeated reversals keep blobs visible");
+
+const holdReversalEnv = createEnvironment();
+const holdReversalDebug = holdReversalEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+holdReversalEnv.setViewport(1024, 768);
+holdReversalEnv.step(1);
+holdReversalEnv.playArea.dispatch("pointerdown", { pointerId: 71, clientX: 300, clientY: 384 });
+holdReversalEnv.step(90);
+holdReversalEnv.playArea.dispatch("pointermove", { pointerId: 71, clientX: 800, clientY: 384 });
+let holdMovedRight = false;
+for (let frame = 0; frame < 420; frame += 1) {
+  holdReversalEnv.step(1);
+  const frameState = holdReversalDebug.snapshot();
+  holdMovedRight ||= frameState.force.x > 0 && frameState.blobs.some((blob) => blob.vx > 0);
+}
+const holdReversalState = holdReversalDebug.snapshot();
+assert.ok(holdMovedRight, "moving a long press across the screen reverses through the shared force and shape path");
+assert.ok(holdReversalState.blobs.every((blob) => [blob.shapeAngle, blob.stretch, blob.tailLag].every(Number.isFinite)), "long-press direction change keeps liquid shape state finite");
+holdReversalEnv.playArea.dispatch("pointercancel", { pointerId: 71 });
+assert.equal(holdReversalDebug.snapshot().pointerCount, 0, "pointercancel clears the hold after reversal");
+
+const interruptedEnv = createEnvironment();
+const interruptedDebug = interruptedEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+interruptedEnv.setViewport(1024, 768);
+interruptedDebug.simulateTilt(-1, 0);
+interruptedEnv.step(100);
+interruptedDebug.simulateTilt(1, 0);
+for (let frame = 0; frame < 180 && !interruptedDebug.snapshot().blobs[0].reversing; frame += 1) interruptedEnv.step(1);
+assert.equal(interruptedDebug.snapshot().blobs[0].reversing, true, "background test reaches reversal state");
+interruptedEnv.documentTarget.hidden = true;
+interruptedEnv.documentTarget.dispatch("visibilitychange");
+assert.ok(interruptedDebug.snapshot().blobs.every((blob) => !blob.reversing), "background transition clears transient reversal state");
+interruptedEnv.documentTarget.hidden = false;
+interruptedEnv.documentTarget.dispatch("visibilitychange");
+interruptedEnv.windowTarget.dispatch("pageshow");
+assert.equal(interruptedEnv.pendingFrames(), 1, "reversal interruption resumes with one RAF");
+
 const reducedEnv = createEnvironment(true);
 const reducedDebug = reducedEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
 reducedDebug.simulateTilt(1, 0);
@@ -186,6 +300,7 @@ assert.ok(reducedState.blobs[0].vx <= 36.01, "reduced motion limits speed");
 assert.equal(reducedState.blobs[0].tailLag, 0, "reduced motion disables the delayed tail");
 assert.ok(Math.abs(reducedState.blobs[0].idleX) < 0.009, "reduced motion keeps idle irregularity subtle");
 assert.equal(reducedState.blobs[0].poolLean, 0, "reduced motion disables asymmetric pool leaning");
+exerciseReversal([-1, 0], [1, 0], "reduced-motion reversal", true);
 
 const fallbackEnv = createEnvironment();
 fallbackEnv.windowTarget.pendingTimeout();

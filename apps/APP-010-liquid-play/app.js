@@ -53,6 +53,9 @@
       stretch: 0,
       wobble: 0,
       tailLag: 0,
+      reversing: false,
+      pendingAngle: 0,
+      faceTilt: 0,
       idlePhase: index * 2.17,
       idleX: 0,
       idleY: 0,
@@ -315,19 +318,43 @@
       const speed = Math.hypot(blob.vx, blob.vy);
       const moving = speed > 1.2;
       const targetAngle = moving ? Math.atan2(blob.vy, blob.vx) : blob.shapeAngle;
-      const turn = angleDifference(targetAngle, blob.shapeAngle);
-      const angleResponse = reducedMotion ? 0.045 : 0.058;
-      blob.shapeAngle += turn * angleResponse;
+      let turn = angleDifference(targetAngle, blob.shapeAngle);
+      const reversalThreshold = 2.32;
+      const minimumReversalStretch = reducedMotion ? 0.001 : 0.055;
+      if (!blob.reversing && moving && Math.abs(turn) >= reversalThreshold && blob.stretch >= minimumReversalStretch) {
+        blob.reversing = true;
+        blob.pendingAngle = targetAngle;
+      }
+      if (blob.reversing && moving) blob.pendingAngle = targetAngle;
+
       const accelerationPull = reducedMotion ? 0 : clamp(Math.hypot(force.x, force.y) * 0.055, 0, 0.055);
-      const targetStretch = reducedMotion
+      let targetStretch = blob.reversing ? 0 : reducedMotion
         ? clamp(speed / 600, 0, 0.075)
-        : clamp(speed / 225 + accelerationPull + Math.abs(turn) * 0.022, 0, 0.46);
-      const stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.108) : (reducedMotion ? 0.025 : 0.026);
+        : clamp(speed / 220 + accelerationPull + Math.abs(turn) * 0.023, 0, 0.475);
+      let stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.108) : (reducedMotion ? 0.025 : 0.023);
+      if (blob.reversing) stretchResponse = reducedMotion ? 0.15 : 0.12;
       blob.stretch += (targetStretch - blob.stretch) * stretchResponse;
-      const turnWobble = reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.09, -0.13, 0.13);
+      const targetTail = blob.reversing || reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.145 + blob.stretch * 0.29, 0, 0.235);
+      const tailResponse = blob.reversing ? (reducedMotion ? 0.18 : 0.13) : targetTail > blob.tailLag ? 0.078 : 0.019;
+      blob.tailLag += (targetTail - blob.tailLag) * tailResponse;
+
+      const reversalReady = blob.stretch <= (reducedMotion ? 0.0003 : 0.025)
+        && blob.tailLag <= (reducedMotion ? 0.002 : 0.014);
+      if (blob.reversing && reversalReady) {
+        blob.shapeAngle = blob.pendingAngle;
+        blob.reversing = false;
+        blob.wobble = 0;
+        turn = 0;
+        targetStretch = 0;
+      } else if (!blob.reversing) {
+        const angleResponse = reducedMotion ? 0.045 : 0.058;
+        blob.shapeAngle += turn * angleResponse;
+      }
+
+      const turnWobble = blob.reversing || reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.09, -0.13, 0.13);
       blob.wobble += (turnWobble - blob.wobble) * (Math.abs(turnWobble) > Math.abs(blob.wobble) ? 0.11 : 0.042);
-      const targetTail = reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.14 + blob.stretch * 0.27, 0, 0.22);
-      blob.tailLag += (targetTail - blob.tailLag) * (targetTail > blob.tailLag ? 0.078 : 0.021);
+      const targetFaceTilt = reducedMotion ? 0 : clamp(blob.vy / 126 * 0.12, -0.12, 0.12);
+      blob.faceTilt += (targetFaceTilt - blob.faceTilt) * 0.08;
       const idleAmount = reducedMotion ? 0.008 : 0.034;
       const idleTargetX = Math.sin(now / 1450 + blob.idlePhase) * idleAmount;
       const idleTargetY = Math.sin(now / 1900 + blob.idlePhase * 1.43) * idleAmount * 0.72;
@@ -339,10 +366,10 @@
   }
 
   function drawBlob(blob) {
-    const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1);
+    const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1.06);
     const stretch = blob.stretch;
-    const front = blob.radius * (1 + blob.organicFront + stretch * 2.05 - squash * 0.36 + blob.idleX);
-    const back = blob.radius * (1 + blob.organicBack + stretch * 0.62 + blob.tailLag + squash * 0.28 - blob.idleX * 0.45);
+    const front = blob.radius * (1 + blob.organicFront + stretch * 2.12 - squash * 0.36 + blob.idleX);
+    const back = blob.radius * (1 + blob.organicBack + stretch * 0.64 + blob.tailLag + squash * 0.31 - blob.idleX * 0.45);
     const vertical = Math.max(blob.radius * (reducedMotion ? 0.84 : 0.72), blob.radius * (blob.organicTall - stretch * 0.48 + squash + blob.idleY));
     const wobble = blob.wobble * blob.radius;
     const topShift = blob.radius * (blob.organicTop + blob.poolLean) + wobble * 0.35;
@@ -372,8 +399,8 @@
     context.strokeStyle = "white";
     context.lineWidth = Math.max(3, blob.radius * 0.04);
     context.stroke();
-    drawFace(blob, front, back, vertical, squash);
     context.restore();
+    drawFace(blob, front, back, vertical, squash);
   }
 
   function drawFace(blob, front, back, vertical, squash) {
@@ -382,6 +409,9 @@
     const eyeY = -vertical * 0.08;
     const eyeRadiusX = Math.max(2.1, blob.radius * 0.032 * (1 + blob.stretch * 0.20));
     const eyeRadiusY = Math.max(2, blob.radius * 0.039 * (1 - squash * 0.65));
+    context.save();
+    context.translate(blob.x, blob.y);
+    context.rotate(blob.faceTilt);
     context.globalAlpha = 0.46;
     context.fillStyle = "#244a45";
     context.beginPath();
@@ -402,6 +432,7 @@
       context.quadraticCurveTo(faceCenter, mouthY + vertical * 0.085, faceCenter + mouthWidth, mouthY);
     }
     context.stroke();
+    context.restore();
   }
 
   function draw() {
@@ -438,6 +469,11 @@
     pointers.clear();
     holdActive = false;
     holdStart = 0;
+    blobs.forEach((blob) => {
+      blob.reversing = false;
+      blob.pendingAngle = blob.shapeAngle;
+      blob.wobble = 0;
+    });
   }
 
   permissionButton.addEventListener("click", requestMotionPermission);
@@ -460,8 +496,8 @@
   window.__LIQUID_PLAY_DEBUG__ = Object.freeze({
     snapshot: () => ({
       blobCount: blobs.length,
-      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY, poolLean }) => ({
-        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY, poolLean
+      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, pendingAngle, faceTilt, idleX, idleY, poolLean }) => ({
+        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, pendingAngle, faceTilt, idleX, idleY, poolLean
       })),
       force: { ...force },
       sensorState,
