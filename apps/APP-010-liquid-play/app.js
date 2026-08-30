@@ -47,7 +47,11 @@
       vy: 0,
       radius: base * scale,
       color: colors[index],
-      contact: 0
+      contact: 0,
+      wallContact: 0,
+      shapeAngle: 0,
+      stretch: 0,
+      wobble: 0
     }));
     keepInside();
   }
@@ -218,12 +222,16 @@
       targetX = dx / length * strength;
       targetY = dy / length * strength;
     }
-    force.x += (targetX - force.x) * 0.12;
-    force.y += (targetY - force.y) * 0.12;
+    const response = reducedMotion ? 0.08 : 0.16;
+    force.x += (targetX - force.x) * response;
+    force.y += (targetY - force.y) * response;
   }
 
   function resolveContacts() {
-    blobs.forEach((blob) => { blob.contact *= 0.82; });
+    blobs.forEach((blob) => {
+      blob.contact *= 0.82;
+      blob.wallContact *= 0.78;
+    });
     for (let i = 0; i < blobs.length; i += 1) {
       for (let j = i + 1; j < blobs.length; j += 1) {
         const a = blobs[i];
@@ -256,9 +264,9 @@
   function update(dt, now) {
     updateForce(now);
     const motionScale = reducedMotion ? 0.42 : 1;
-    const acceleration = 48 * motionScale;
+    const acceleration = (reducedMotion ? 48 : 72) * motionScale;
     const damping = reducedMotion ? 0.935 : 0.968;
-    const maxSpeed = reducedMotion ? 36 : 84;
+    const maxSpeed = reducedMotion ? 36 : 126;
     blobs.forEach((blob) => {
       blob.vx += force.x * acceleration * dt;
       blob.vy += force.y * acceleration * dt;
@@ -275,45 +283,101 @@
       if (blob.x < margin || blob.x > width - margin) {
         blob.x = clamp(blob.x, margin, width - margin);
         blob.vx *= reducedMotion ? -0.12 : -0.25;
+        blob.wallContact = Math.max(blob.wallContact, reducedMotion ? 0.035 : 0.12);
       }
       if (blob.y < margin || blob.y > height - margin) {
         blob.y = clamp(blob.y, margin, height - margin);
         blob.vy *= reducedMotion ? -0.12 : -0.25;
+        blob.wallContact = Math.max(blob.wallContact, reducedMotion ? 0.035 : 0.12);
       }
     });
     resolveContacts();
     keepInside();
+    updateShapes();
+  }
+
+  function angleDifference(target, current) {
+    return Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  }
+
+  function updateShapes() {
+    blobs.forEach((blob) => {
+      const speed = Math.hypot(blob.vx, blob.vy);
+      const moving = speed > 1.2;
+      const targetAngle = moving ? Math.atan2(blob.vy, blob.vx) : blob.shapeAngle;
+      const turn = angleDifference(targetAngle, blob.shapeAngle);
+      const angleResponse = reducedMotion ? 0.045 : 0.085;
+      blob.shapeAngle += turn * angleResponse;
+      const targetStretch = reducedMotion ? clamp(speed / 600, 0, 0.075) : clamp(speed / 310, 0, 0.30);
+      const stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.095) : (reducedMotion ? 0.025 : 0.055);
+      blob.stretch += (targetStretch - blob.stretch) * stretchResponse;
+      const turnWobble = reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 90, 1) * 0.055, 0, 0.09);
+      blob.wobble += (turnWobble - blob.wobble) * (turnWobble > blob.wobble ? 0.13 : 0.065);
+    });
   }
 
   function drawBlob(blob) {
-    const speed = Math.hypot(blob.vx, blob.vy);
-    const deformScale = reducedMotion ? 0.22 : 1;
-    const stretch = clamp(speed / 360, 0, 0.14) * deformScale;
-    const squash = blob.contact * (reducedMotion ? 0.28 : 1);
-    const radiusX = blob.radius * (1 + stretch - squash * 0.35);
-    const radiusY = blob.radius * (1 - stretch * 0.55 + squash * 0.5);
-    const angle = speed > 0.5 ? Math.atan2(blob.vy, blob.vx) : 0;
+    const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1);
+    const stretch = blob.stretch;
+    const front = blob.radius * (1 + stretch * 1.5 - squash * 0.25);
+    const back = blob.radius * (1 + stretch * 0.28 + squash * 0.2);
+    const vertical = blob.radius * (1 - stretch * 0.42 + squash * 0.55);
+    const wobble = blob.wobble * blob.radius;
     context.save();
     context.translate(blob.x, blob.y);
-    context.rotate(angle);
+    context.rotate(blob.shapeAngle);
     context.shadowColor = "rgba(38, 83, 74, .16)";
     context.shadowBlur = reducedMotion ? 8 : 15;
     context.shadowOffsetY = 6;
-    const gradient = context.createRadialGradient(-radiusX * 0.28, -radiusY * 0.32, radiusX * 0.08, 0, 0, radiusX);
+    const gradient = context.createRadialGradient(-back * 0.22, -vertical * 0.34, blob.radius * 0.08, 0, 0, Math.max(front, vertical));
     gradient.addColorStop(0, "rgba(255,255,255,.86)");
     gradient.addColorStop(0.16, blob.color);
     gradient.addColorStop(1, blob.color);
     context.globalAlpha = 0.9;
     context.fillStyle = gradient;
     context.beginPath();
-    context.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
+    context.moveTo(front, 0);
+    context.bezierCurveTo(front, -vertical * 0.552, front * 0.552, -vertical, wobble, -vertical);
+    context.bezierCurveTo(-back * 0.552, -vertical, -back, -vertical * 0.552, -back, 0);
+    context.bezierCurveTo(-back, vertical * 0.552, -back * 0.552, vertical, -wobble, vertical);
+    context.bezierCurveTo(front * 0.552, vertical, front, vertical * 0.552, front, 0);
+    context.closePath();
     context.fill();
     context.shadowColor = "transparent";
     context.globalAlpha = 0.35;
     context.strokeStyle = "white";
-    context.lineWidth = Math.max(3, blob.radius * 0.045);
+    context.lineWidth = Math.max(3, blob.radius * 0.04);
     context.stroke();
+    drawFace(blob, front, back, vertical, squash);
     context.restore();
+  }
+
+  function drawFace(blob, front, back, vertical, squash) {
+    const faceCenter = (front - back) * 0.045;
+    const eyeGap = blob.radius * (0.25 + blob.stretch * 0.34);
+    const eyeY = -vertical * 0.08;
+    const eyeRadiusX = Math.max(2.4, blob.radius * 0.038 * (1 + blob.stretch * 0.22));
+    const eyeRadiusY = Math.max(2.2, blob.radius * 0.046 * (1 - squash * 0.65));
+    context.globalAlpha = 0.68;
+    context.fillStyle = "#244a45";
+    context.beginPath();
+    context.ellipse(faceCenter - eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
+    context.ellipse(faceCenter + eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
+    context.fill();
+    const mouthY = vertical * 0.18;
+    const mouthWidth = blob.radius * (0.16 + blob.stretch * 0.14);
+    const surprise = clamp((blob.contact + blob.wallContact) * 4, 0, 1);
+    context.strokeStyle = "#244a45";
+    context.lineWidth = Math.max(2, blob.radius * 0.025);
+    context.lineCap = "round";
+    context.beginPath();
+    if (surprise > 0.34) {
+      context.ellipse(faceCenter, mouthY, mouthWidth * 0.42, Math.max(2, vertical * 0.035), 0, 0, Math.PI * 2);
+    } else {
+      context.moveTo(faceCenter - mouthWidth, mouthY);
+      context.quadraticCurveTo(faceCenter, mouthY + vertical * 0.085, faceCenter + mouthWidth, mouthY);
+    }
+    context.stroke();
   }
 
   function draw() {
@@ -372,7 +436,9 @@
   window.__LIQUID_PLAY_DEBUG__ = Object.freeze({
     snapshot: () => ({
       blobCount: blobs.length,
-      blobs: blobs.map(({ x, y, vx, vy, radius, contact }) => ({ x, y, vx, vy, radius, contact })),
+      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble }) => ({
+        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble
+      })),
       force: { ...force },
       sensorState,
       pointerCount: pointers.size,

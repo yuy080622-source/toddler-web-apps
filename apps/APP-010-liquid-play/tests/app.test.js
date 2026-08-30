@@ -35,10 +35,11 @@ function createEnvironment(reduced = false) {
   button.disabled = false;
   playArea.getBoundingClientRect = () => ({ ...viewport });
   playArea.setPointerCapture = () => {};
+  const drawCalls = [];
   const gradient = { addColorStop() {} };
   const context2d = new Proxy({}, { get: (_, key) => {
     if (key === "createLinearGradient" || key === "createRadialGradient") return () => gradient;
-    return () => {};
+    return (...args) => { drawCalls.push([key, ...args]); };
   }, set: () => true });
   const canvas = { width: 0, height: 0, style: {}, getContext: () => context2d };
   const elements = { "liquid-canvas": canvas, "play-area": playArea, "motion-permission": button, status };
@@ -74,7 +75,7 @@ function createEnvironment(reduced = false) {
       pending.forEach(([, callback]) => callback(now));
     }
   }
-  return { sandbox, playArea, button, documentTarget, windowTarget, media, step,
+  return { sandbox, playArea, button, documentTarget, windowTarget, media, step, drawCalls,
     setViewport: (width, height) => { viewport = { width, height }; windowTarget.dispatch("resize"); },
     pendingFrames: () => frames.size };
 }
@@ -95,10 +96,19 @@ state = debug.snapshot();
 assert.ok(state.blobs.every((blob, index) => blob.x > startX[index]), "tilt moves blobs toward gravity");
 assert.equal(state.sensorState, "active", "valid sensor samples activate tilt input");
 assert.ok(state.blobs.every((blob) => blob.x >= blob.radius * 0.8 && blob.x <= state.width - blob.radius * 0.8), "blobs remain horizontal bounds");
+assert.ok(state.blobs.some((blob) => blob.stretch > 0.06), "moving blobs visibly stretch in travel direction");
+assert.ok(env.drawCalls.filter(([name]) => name === "bezierCurveTo").length >= 6, "soft teardrop paths are drawn");
+assert.ok(env.drawCalls.filter(([name]) => name === "ellipse").length >= 6, "two face eyes are drawn on every blob");
+assert.ok(env.drawCalls.filter(([name]) => name === "quadraticCurveTo").length >= 3, "small smiles are drawn with the blob transform");
+assert.ok(Math.max(...state.blobs.map((blob) => Math.hypot(blob.vx, blob.vy))) > 20, "normal response exceeds the previous approximate terminal speed");
 
 debug.simulateTilt(0, 0);
+const stretchedBeforeStop = state.blobs[0].stretch;
+env.step(1);
+assert.ok(debug.snapshot().blobs[0].stretch > 0, "shape does not snap back immediately");
 env.step(90);
 const beforeHold = debug.snapshot();
+assert.ok(beforeHold.blobs[0].stretch < stretchedBeforeStop, "shape eases back as speed falls");
 env.playArea.dispatch("pointerdown", { pointerId: 1, clientX: 20, clientY: 800 });
 env.step(15);
 assert.equal(debug.snapshot().holdActive, true, "long press activates after threshold");
