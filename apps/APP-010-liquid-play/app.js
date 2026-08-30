@@ -7,7 +7,11 @@
   const status = document.getElementById("status");
   const context = canvas.getContext("2d", { alpha: false });
   const reduceQuery = matchMedia("(prefers-reduced-motion: reduce)");
-  const colors = ["#ff7a8a", "#42bfc2", "#f4c84d"];
+  const colors = [
+    { base: "#f06f86", light: "rgba(255, 190, 201, .88)", edge: "rgba(194, 61, 88, .78)" },
+    { base: "#35b7bc", light: "rgba(168, 239, 235, .86)", edge: "rgba(21, 126, 139, .76)" },
+    { base: "#efc247", light: "rgba(255, 234, 157, .88)", edge: "rgba(199, 143, 34, .76)" }
+  ];
   const pointers = new Map();
   const force = { x: 0, y: 0 };
   const tilt = { x: 0, y: 0, targetX: 0, targetY: 0 };
@@ -53,11 +57,8 @@
       stretch: 0,
       wobble: 0,
       tailLag: 0,
-      reversing: false,
-      reversalPhase: "normal",
-      reversalPhaseStartedAt: 0,
-      pendingAngle: 0,
-      neutralMix: 0,
+      turnSoftness: 0,
+      jellyPulse: 0,
       faceTilt: 0,
       idlePhase: index * 2.17,
       idleX: 0,
@@ -144,7 +145,7 @@
     window.addEventListener("deviceorientation", handleOrientation, true);
     clearTimeout(sensorTimer);
     sensorTimer = window.setTimeout(() => {
-      if (validSensorSamples < 3) useFallback("長押しすると液体が指へ寄ります");
+      if (validSensorSamples < 3) useFallback("長押しするとジェリーが指へ寄ります");
     }, 2500);
   }
 
@@ -168,17 +169,17 @@
         listenForSensor();
         announce("端末をかたむけて遊べます");
       } else {
-        useFallback("長押しすると液体が指へ寄ります");
+        useFallback("長押しするとジェリーが指へ寄ります");
       }
     } catch (_) {
       permissionButton.hidden = true;
-      useFallback("長押しすると液体が指へ寄ります");
+      useFallback("長押しするとジェリーが指へ寄ります");
     }
   }
 
   function setupSensor() {
     if (!("DeviceOrientationEvent" in window)) {
-      useFallback("長押しすると液体が指へ寄ります");
+      useFallback("長押しするとジェリーが指へ寄ります");
       return;
     }
     if (typeof DeviceOrientationEvent.requestPermission === "function") {
@@ -321,63 +322,31 @@
       const speed = Math.hypot(blob.vx, blob.vy);
       const moving = speed > 1.2;
       const targetAngle = moving ? Math.atan2(blob.vy, blob.vx) : blob.shapeAngle;
-      let turn = angleDifference(targetAngle, blob.shapeAngle);
-      const reversalThreshold = 2.32;
-      const minimumReversalStretch = reducedMotion ? 0.001 : 0.055;
-      if (blob.reversalPhase === "normal" && moving && Math.abs(turn) >= reversalThreshold && blob.stretch >= minimumReversalStretch) {
-        blob.reversing = true;
-        blob.reversalPhase = "shrinking";
-        blob.reversalPhaseStartedAt = now;
-        blob.pendingAngle = targetAngle;
-      }
-      if (blob.reversing && moving) blob.pendingAngle = targetAngle;
-
+      const turn = angleDifference(targetAngle, blob.shapeAngle);
+      const angleResponse = reducedMotion ? 0.035 : 0.048;
+      const maximumAngleStep = reducedMotion ? 0.025 : 0.052;
+      blob.shapeAngle += clamp(turn * angleResponse, -maximumAngleStep, maximumAngleStep);
+      const turnSoftnessTarget = reducedMotion
+        ? clamp((Math.abs(turn) - 0.9) / 2.25, 0, 0.22)
+        : clamp((Math.abs(turn) - 0.52) / 2.35, 0, 0.68);
+      blob.turnSoftness += (turnSoftnessTarget - blob.turnSoftness) * (turnSoftnessTarget > blob.turnSoftness ? 0.14 : 0.045);
       const accelerationPull = reducedMotion ? 0 : clamp(Math.hypot(force.x, force.y) * 0.055, 0, 0.055);
-      const inReversal = blob.reversalPhase !== "normal";
-      const targetStretch = inReversal ? 0 : reducedMotion
+      const baseStretch = reducedMotion
         ? clamp(speed / 600, 0, 0.075)
         : clamp(speed / 220 + accelerationPull + Math.abs(turn) * 0.023, 0, 0.475);
+      const targetStretch = baseStretch * (1 - blob.turnSoftness * (reducedMotion ? 0.6 : 0.76));
       let stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.108) : (reducedMotion ? 0.025 : 0.023);
-      if (inReversal) stretchResponse = reducedMotion ? 0.2 : 0.16;
       blob.stretch += (targetStretch - blob.stretch) * stretchResponse;
-      const targetTail = inReversal || reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.148 + blob.stretch * 0.30, 0, 0.24);
-      const tailResponse = inReversal ? (reducedMotion ? 0.24 : 0.19) : targetTail > blob.tailLag ? 0.078 : 0.018;
+      const targetTail = reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.09 + blob.stretch * 0.20, 0, 0.16);
+      const tailResponse = targetTail > blob.tailLag ? 0.07 : 0.022;
       blob.tailLag += (targetTail - blob.tailLag) * tailResponse;
-
-      const neutralTarget = inReversal ? 1 : 0;
-      blob.neutralMix += (neutralTarget - blob.neutralMix) * (inReversal ? 0.22 : 0.085);
-      const turnWobble = inReversal || reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.09, -0.13, 0.13);
-      const wobbleResponse = inReversal ? 0.28 : Math.abs(turnWobble) > Math.abs(blob.wobble) ? 0.11 : 0.042;
+      const turnWobble = reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.07 * (1 - blob.turnSoftness * 0.55), -0.095, 0.095);
+      const wobbleResponse = Math.abs(turnWobble) > Math.abs(blob.wobble) ? 0.10 : 0.038;
       blob.wobble += (turnWobble - blob.wobble) * wobbleResponse;
-
-      const neutralReady = blob.stretch <= (reducedMotion ? 0.00025 : 0.006)
-        && blob.tailLag <= (reducedMotion ? 0.0004 : 0.003)
-        && Math.abs(blob.wobble) <= (reducedMotion ? 0.0002 : 0.003)
-        && blob.neutralMix >= 0.96;
-      if (blob.reversalPhase === "shrinking" && neutralReady) {
-        blob.reversalPhase = "neutral";
-        blob.reversalPhaseStartedAt = now;
-        blob.stretch = 0;
-        blob.tailLag = 0;
-        blob.wobble = 0;
-        blob.neutralMix = 1;
-      } else if (blob.reversalPhase === "neutral" && now - blob.reversalPhaseStartedAt >= (reducedMotion ? 50 : 84)) {
-        blob.shapeAngle = blob.pendingAngle;
-        blob.reversalPhase = "switched";
-        blob.reversalPhaseStartedAt = now;
-        blob.stretch = 0;
-        blob.tailLag = 0;
-        blob.wobble = 0;
-        blob.neutralMix = 1;
-        turn = 0;
-      } else if (blob.reversalPhase === "switched" && now - blob.reversalPhaseStartedAt >= (reducedMotion ? 17 : 34)) {
-        blob.reversalPhase = "normal";
-        blob.reversing = false;
-        blob.reversalPhaseStartedAt = now;
-      } else if (blob.reversalPhase === "normal") {
-        const angleResponse = reducedMotion ? 0.045 : 0.058;
-        blob.shapeAngle += turn * angleResponse;
-      }
+      const pulseTarget = reducedMotion
+        ? clamp((blob.contact + blob.wallContact) * 0.22 + blob.turnSoftness * 0.08, 0, 0.08)
+        : clamp(blob.contact * 1.5 + blob.wallContact * 1.25 + blob.turnSoftness * 0.24, 0, 0.34);
+      blob.jellyPulse += (pulseTarget - blob.jellyPulse) * (pulseTarget > blob.jellyPulse ? 0.16 : 0.036);
       const targetFaceTilt = reducedMotion ? 0 : clamp(blob.vy / 126 * 0.12, -0.12, 0.12);
       blob.faceTilt += (targetFaceTilt - blob.faceTilt) * 0.08;
       const idleAmount = reducedMotion ? 0.008 : 0.034;
@@ -385,34 +354,34 @@
       const idleTargetY = Math.sin(now / 1900 + blob.idlePhase * 1.43) * idleAmount * 0.72;
       blob.idleX += (idleTargetX - blob.idleX) * 0.018;
       blob.idleY += (idleTargetY - blob.idleY) * 0.018;
-      const leanTarget = inReversal || reducedMotion ? 0 : Math.sin(now / 2300 + blob.idlePhase * 0.81) * 0.032;
-      blob.poolLean += (leanTarget - blob.poolLean) * (inReversal ? 0.18 : 0.014);
+      const leanTarget = reducedMotion ? 0 : Math.sin(now / 2300 + blob.idlePhase * 0.81) * 0.028;
+      blob.poolLean += (leanTarget - blob.poolLean) * 0.014;
     });
   }
 
   function drawBlob(blob) {
-    const neutral = blob.neutralMix;
-    const directional = 1 - neutral;
-    const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1.09) * (1 - neutral * 0.7);
+    const directional = 1 - blob.turnSoftness * (reducedMotion ? 0.25 : 0.58);
+    const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.25 : 0.92) + blob.jellyPulse;
     const stretch = blob.stretch * directional;
-    const front = blob.radius * (1 + blob.organicFront * directional + stretch * 2.12 - squash * 0.36 + blob.idleX * directional);
-    const back = blob.radius * (1 + blob.organicBack * directional + stretch * 0.64 + blob.tailLag * directional + squash * 0.33 - blob.idleX * 0.45 * directional);
+    const front = blob.radius * (1 + blob.organicFront * directional + stretch * 1.62 - squash * 0.24 + blob.idleX * directional);
+    const back = blob.radius * (1 + blob.organicBack * directional + stretch * 0.52 + blob.tailLag * directional + squash * 0.24 - blob.idleX * 0.40 * directional);
     const organicTall = 1 + (blob.organicTall - 1) * directional;
-    const vertical = Math.max(blob.radius * (reducedMotion ? 0.84 : 0.72), blob.radius * (organicTall - stretch * 0.48 + squash + blob.idleY * directional));
+    const vertical = Math.max(blob.radius * (reducedMotion ? 0.87 : 0.78), blob.radius * (organicTall - stretch * 0.34 + squash * 0.72 + blob.idleY * directional));
     const wobble = blob.wobble * blob.radius * directional;
-    const topShift = blob.radius * (blob.organicTop + blob.poolLean) * directional + wobble * 0.35;
-    const bottomShift = blob.radius * (blob.organicBottom - blob.poolLean * 0.7) * directional - wobble * 0.45;
+    const topShift = blob.radius * (blob.organicTop + blob.poolLean) * directional + wobble * 0.30;
+    const bottomShift = blob.radius * (blob.organicBottom - blob.poolLean * 0.7) * directional - wobble * 0.38;
     context.save();
     context.translate(blob.x, blob.y);
     context.rotate(blob.shapeAngle);
     context.shadowColor = "rgba(38, 83, 74, .16)";
     context.shadowBlur = reducedMotion ? 8 : 15;
     context.shadowOffsetY = 6;
-    const gradient = context.createRadialGradient(-back * 0.22, -vertical * 0.34, blob.radius * 0.08, 0, 0, Math.max(front, vertical));
-    gradient.addColorStop(0, "rgba(255,255,255,.86)");
-    gradient.addColorStop(0.16, blob.color);
-    gradient.addColorStop(1, blob.color);
-    context.globalAlpha = 0.9;
+    const gradient = context.createRadialGradient(-back * 0.24, -vertical * 0.32, blob.radius * 0.06, 0, 0, Math.max(front, vertical));
+    gradient.addColorStop(0, "rgba(255,255,255,.72)");
+    gradient.addColorStop(0.20, blob.color.light);
+    gradient.addColorStop(0.68, blob.color.base);
+    gradient.addColorStop(1, blob.color.edge);
+    context.globalAlpha = 0.82;
     context.fillStyle = gradient;
     context.beginPath();
     context.moveTo(front, 0);
@@ -422,32 +391,49 @@
     context.bezierCurveTo(front * 0.56, vertical * 1.02, front, vertical * 0.54, front, 0);
     context.closePath();
     context.fill();
+    context.save();
+    context.clip();
+    const innerGlow = context.createRadialGradient(-back * 0.16, -vertical * 0.16, 0, 0, 0, blob.radius * 0.9);
+    innerGlow.addColorStop(0, "rgba(255,255,255,.30)");
+    innerGlow.addColorStop(0.58, "rgba(255,255,255,.08)");
+    innerGlow.addColorStop(1, "rgba(255,255,255,0)");
+    context.globalAlpha = reducedMotion ? 0.28 : 0.38;
+    context.fillStyle = innerGlow;
+    context.beginPath();
+    context.ellipse(-back * 0.08, -vertical * 0.07, blob.radius * 0.72, blob.radius * 0.60, -0.18, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = 0.34;
+    context.fillStyle = "rgba(255,255,255,.72)";
+    context.beginPath();
+    context.ellipse(-back * 0.30, -vertical * 0.38, blob.radius * 0.16, blob.radius * 0.10, -0.45, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
     context.shadowColor = "transparent";
-    context.globalAlpha = 0.35;
+    context.globalAlpha = 0.48;
     context.strokeStyle = "white";
     context.lineWidth = Math.max(3, blob.radius * 0.04);
     context.stroke();
     context.restore();
-    drawFace(blob, front, back, vertical, squash);
+    drawFace(blob, front, back, vertical, squash, stretch);
   }
 
-  function drawFace(blob, front, back, vertical, squash) {
+  function drawFace(blob, front, back, vertical, squash, stretch) {
     const faceCenter = (front - back) * 0.055 - blob.tailLag * blob.radius * 0.08;
-    const eyeGap = blob.radius * (0.22 + blob.stretch * 0.40);
+    const eyeGap = blob.radius * (0.22 + stretch * 0.34);
     const eyeY = -vertical * 0.08;
-    const eyeRadiusX = Math.max(2.1, blob.radius * 0.032 * (1 + blob.stretch * 0.20));
+    const eyeRadiusX = Math.max(2.1, blob.radius * 0.032 * (1 + stretch * 0.18));
     const eyeRadiusY = Math.max(2, blob.radius * 0.039 * (1 - squash * 0.65));
     context.save();
     context.translate(blob.x, blob.y);
     context.rotate(blob.faceTilt);
-    context.globalAlpha = 0.46;
+    context.globalAlpha = 0.52;
     context.fillStyle = "#244a45";
     context.beginPath();
     context.ellipse(faceCenter - eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
     context.ellipse(faceCenter + eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
     context.fill();
     const mouthY = vertical * 0.18;
-    const mouthWidth = blob.radius * (0.13 + blob.stretch * 0.15);
+    const mouthWidth = blob.radius * (0.13 + stretch * 0.13);
     const surprise = clamp((blob.contact + blob.wallContact) * 4, 0, 1);
     context.strokeStyle = "#244a45";
     context.lineWidth = Math.max(1.7, blob.radius * 0.021);
@@ -498,11 +484,8 @@
     holdActive = false;
     holdStart = 0;
     blobs.forEach((blob) => {
-      blob.reversing = false;
-      blob.reversalPhase = "normal";
-      blob.reversalPhaseStartedAt = 0;
-      blob.pendingAngle = blob.shapeAngle;
-      blob.neutralMix = 0;
+      blob.turnSoftness = 0;
+      blob.jellyPulse = 0;
       blob.wobble = 0;
     });
   }
@@ -527,8 +510,8 @@
   window.__LIQUID_PLAY_DEBUG__ = Object.freeze({
     snapshot: () => ({
       blobCount: blobs.length,
-      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, reversalPhase, reversalPhaseStartedAt, pendingAngle, neutralMix, faceTilt, idleX, idleY, poolLean }) => ({
-        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, reversing, reversalPhase, reversalPhaseStartedAt, pendingAngle, neutralMix, faceTilt, idleX, idleY, poolLean
+      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, turnSoftness, jellyPulse, faceTilt, idleX, idleY, poolLean }) => ({
+        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, turnSoftness, jellyPulse, faceTilt, idleX, idleY, poolLean
       })),
       force: { ...force },
       sensorState,

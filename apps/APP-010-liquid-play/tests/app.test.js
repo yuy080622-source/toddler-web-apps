@@ -38,7 +38,10 @@ function createEnvironment(reduced = false) {
   const drawCalls = [];
   const gradient = { addColorStop() {} };
   const context2d = new Proxy({}, { get: (_, key) => {
-    if (key === "createLinearGradient" || key === "createRadialGradient") return () => gradient;
+    if (key === "createLinearGradient" || key === "createRadialGradient") return (...args) => {
+      drawCalls.push([key, ...args]);
+      return gradient;
+    };
     return (...args) => { drawCalls.push([key, ...args]); };
   }, set: () => true });
   const canvas = { width: 0, height: 0, style: {}, getContext: () => context2d };
@@ -84,7 +87,7 @@ function angularDistance(a, b) {
   return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 }
 
-function exerciseReversal(from, to, label, reduced = false) {
+function exerciseJellyTurn(from, to, label, reduced = false) {
   const reversalEnv = createEnvironment(reduced);
   const reversalDebug = reversalEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
   reversalEnv.setViewport(1024, 768);
@@ -93,50 +96,29 @@ function exerciseReversal(from, to, label, reduced = false) {
   const before = reversalDebug.snapshot().blobs[0];
   assert.ok(before.stretch >= (reduced ? 0.004 : 0.08), `${label}: initial direction creates visible stretch (${before.stretch})`);
   reversalDebug.simulateTilt(to[0], to[1]);
-  let sawShrinking = false;
-  let sawNeutral = false;
-  let neutralFrames = 0;
-  let shrinkingAngle = before.shapeAngle;
-  let heldOldAngle = true;
-  let neutralWasRound = true;
-  let switchedAtZero = false;
-  let sawSwitched = false;
-  let reextended = false;
+  let minimumVisibleStretch = before.stretch;
+  let maximumTurnSoftness = 0;
+  let maximumJellyPulse = 0;
   let previousAngle = before.shapeAngle;
-  let switchAngleStep = 0;
-  let nonSwitchAngleStep = 0;
-  for (let frame = 0; frame < 320; frame += 1) {
+  let maximumAngleStep = 0;
+  for (let frame = 0; frame < 360; frame += 1) {
     reversalEnv.step(1);
     const blob = reversalDebug.snapshot().blobs[0];
     const angleStep = angularDistance(blob.shapeAngle, previousAngle);
     previousAngle = blob.shapeAngle;
-    if (blob.reversalPhase === "shrinking" && !sawSwitched) {
-      if (!sawShrinking) shrinkingAngle = blob.shapeAngle;
-      sawShrinking = true;
-      heldOldAngle &&= angularDistance(blob.shapeAngle, shrinkingAngle) < 0.000001;
-      nonSwitchAngleStep = Math.max(nonSwitchAngleStep, angleStep);
-    } else if (blob.reversalPhase === "neutral" && !sawSwitched) {
-      sawNeutral = true;
-      neutralFrames += 1;
-      heldOldAngle &&= angularDistance(blob.shapeAngle, shrinkingAngle) < 0.000001;
-      neutralWasRound &&= blob.stretch === 0 && blob.tailLag === 0 && blob.wobble === 0 && blob.neutralMix === 1;
-      nonSwitchAngleStep = Math.max(nonSwitchAngleStep, angleStep);
-    } else if (blob.reversalPhase === "switched" && !sawSwitched) {
-      switchAngleStep = Math.max(switchAngleStep, angleStep);
-      switchedAtZero ||= blob.stretch === 0 && blob.tailLag === 0 && blob.wobble === 0 && blob.neutralMix === 1;
-      sawSwitched = true;
-    } else if (sawNeutral && blob.stretch > (reduced ? 0.004 : 0.07)) {
-      reextended = true;
-    }
-    assert.ok(Number.isFinite(blob.shapeAngle) && Number.isFinite(blob.stretch), `${label}: reversal state stays finite`);
+    maximumAngleStep = Math.max(maximumAngleStep, angleStep);
+    maximumTurnSoftness = Math.max(maximumTurnSoftness, blob.turnSoftness);
+    maximumJellyPulse = Math.max(maximumJellyPulse, blob.jellyPulse);
+    minimumVisibleStretch = Math.min(minimumVisibleStretch, blob.stretch * (1 - blob.turnSoftness * (reduced ? 0.25 : 0.58)));
+    assert.ok([blob.shapeAngle, blob.stretch, blob.turnSoftness, blob.jellyPulse].every(Number.isFinite), `${label}: turn state stays finite`);
   }
-  assert.ok(sawShrinking, `${label}: opposite motion enters shrinking phase`);
-  assert.ok(heldOldAngle && nonSwitchAngleStep < 0.000001, `${label}: shapeAngle is completely fixed through shrinking and neutral`);
-  assert.ok(sawNeutral && neutralFrames >= (reduced ? 3 : 5), `${label}: explicit neutral shape is held for multiple frames (${neutralFrames})`);
-  assert.ok(neutralWasRound, `${label}: neutral removes stretch, tail, wobble, and directional shape mix`);
-  assert.ok(switchedAtZero, `${label}: shapeAngle switches while the visible shape is still neutral`);
-  assert.ok(switchAngleStep > 2.3, `${label}: angle changes once in the neutral switched phase instead of interpolating`);
-  assert.ok(reextended, `${label}: new direction re-extends only after the neutral hold and switch`);
+  const after = reversalDebug.snapshot().blobs[0];
+  assert.ok(maximumAngleStep <= (reduced ? 0.02501 : 0.05201), `${label}: rotation stays softly bounded (${maximumAngleStep})`);
+  assert.ok(maximumTurnSoftness >= (reduced ? 0.03 : 0.2), `${label}: turn temporarily rounds and softens the jelly (${maximumTurnSoftness})`);
+  assert.ok(minimumVisibleStretch < before.stretch * (reduced ? 0.98 : 0.8), `${label}: directional stretch relaxes during the turn`);
+  assert.ok(maximumJellyPulse > (reduced ? 0.001 : 0.02), `${label}: a restrained jelly pulse accompanies the turn`);
+  assert.ok(after.stretch > (reduced ? 0.003 : 0.06), `${label}: jelly re-extends in its new direction`);
+  assert.ok(angularDistance(after.shapeAngle, Math.atan2(to[1], to[0])) < 0.4, `${label}: shape eventually follows the new direction`);
   assert.ok(reversalDebug.snapshot().blobs.every((blob) => Math.abs(blob.faceTilt) <= 0.121), `${label}: face stays upright instead of rotating 180 degrees`);
   return { env: reversalEnv, debug: reversalDebug };
 }
@@ -164,6 +146,8 @@ assert.ok(state.blobs.some((blob) => Math.abs(blob.poolLean) > 0.001), "asymmetr
 assert.ok(env.drawCalls.filter(([name]) => name === "bezierCurveTo").length >= 6, "soft teardrop paths are drawn");
 assert.ok(env.drawCalls.filter(([name]) => name === "ellipse").length >= 6, "two face eyes are drawn on every blob");
 assert.ok(env.drawCalls.filter(([name]) => name === "quadraticCurveTo").length >= 3, "small smiles are drawn with the blob transform");
+assert.ok(env.drawCalls.filter(([name]) => name === "createRadialGradient").length >= 6, "body depth and inner highlights use layered jelly gradients");
+assert.ok(env.drawCalls.filter(([name]) => name === "clip").length >= 3, "internal jelly texture is clipped inside each body");
 assert.ok(Math.max(...state.blobs.map((blob) => Math.hypot(blob.vx, blob.vy))) > 20, "normal response exceeds the previous approximate terminal speed");
 
 debug.simulateTilt(0, 0);
@@ -235,11 +219,11 @@ contactEnv.setViewport(180, 180);
 contactEnv.step(5);
 assert.ok(contactEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().blobs.some((blob) => blob.contact > 0), "blob overlap creates mutual liquid compression");
 
-exerciseReversal([-1, 0], [1, 0], "left to right");
-exerciseReversal([1, 0], [-1, 0], "right to left");
-exerciseReversal([0, -1], [0, 1], "up to down");
-exerciseReversal([0, 1], [0, -1], "down to up");
-exerciseReversal([-0.8, -0.8], [0.8, 0.8], "diagonal reversal");
+exerciseJellyTurn([-1, 0], [1, 0], "left to right");
+exerciseJellyTurn([1, 0], [-1, 0], "right to left");
+exerciseJellyTurn([0, -1], [0, 1], "up to down");
+exerciseJellyTurn([0, 1], [0, -1], "down to up");
+exerciseJellyTurn([-0.8, -0.8], [0.8, 0.8], "diagonal reversal");
 
 const quarterTurnEnv = createEnvironment();
 const quarterTurnDebug = quarterTurnEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
@@ -247,12 +231,18 @@ quarterTurnEnv.setViewport(1024, 768);
 quarterTurnDebug.simulateTilt(-1, 0);
 quarterTurnEnv.step(90);
 quarterTurnDebug.simulateTilt(0, 1);
-let quarterTurnReversal = false;
+let quarterTurnSoftness = 0;
+let quarterTurnAngleStep = 0;
+let quarterPreviousAngle = quarterTurnDebug.snapshot().blobs[0].shapeAngle;
 for (let frame = 0; frame < 100; frame += 1) {
   quarterTurnEnv.step(1);
-  quarterTurnReversal ||= quarterTurnDebug.snapshot().blobs[0].reversing;
+  const blob = quarterTurnDebug.snapshot().blobs[0];
+  quarterTurnSoftness = Math.max(quarterTurnSoftness, blob.turnSoftness);
+  quarterTurnAngleStep = Math.max(quarterTurnAngleStep, angularDistance(blob.shapeAngle, quarterPreviousAngle));
+  quarterPreviousAngle = blob.shapeAngle;
 }
-assert.equal(quarterTurnReversal, false, "a roughly 90-degree turn keeps flowing without an unnecessary round reset");
+assert.ok(quarterTurnSoftness < 0.5, "a roughly 90-degree turn keeps more of the flowing jelly shape");
+assert.ok(quarterTurnAngleStep <= 0.05201, "a roughly 90-degree turn remains softly bounded");
 
 const alternatingEnv = createEnvironment();
 const alternatingDebug = alternatingEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
@@ -273,18 +263,20 @@ redirectedEnv.setViewport(1024, 768);
 redirectedDebug.simulateTilt(-1, 0);
 redirectedEnv.step(100);
 redirectedDebug.simulateTilt(1, 0);
-for (let frame = 0; frame < 180 && redirectedDebug.snapshot().blobs[0].reversalPhase !== "shrinking"; frame += 1) redirectedEnv.step(1);
-const firstPendingAngle = redirectedDebug.snapshot().blobs[0].pendingAngle;
+redirectedEnv.step(30);
+const angleBeforeRedirect = redirectedDebug.snapshot().blobs[0].shapeAngle;
 redirectedDebug.simulateTilt(0, -1);
-let pendingDirectionUpdated = false;
 let redirectedCompleted = false;
+let redirectMaximumStep = 0;
+let redirectPreviousAngle = angleBeforeRedirect;
 for (let frame = 0; frame < 360; frame += 1) {
   redirectedEnv.step(1);
   const blob = redirectedDebug.snapshot().blobs[0];
-  pendingDirectionUpdated ||= angularDistance(blob.pendingAngle, firstPendingAngle) > 0.35;
-  redirectedCompleted ||= blob.reversalPhase === "normal" && pendingDirectionUpdated && blob.stretch > 0.05;
+  redirectMaximumStep = Math.max(redirectMaximumStep, angularDistance(blob.shapeAngle, redirectPreviousAngle));
+  redirectPreviousAngle = blob.shapeAngle;
+  redirectedCompleted ||= angularDistance(blob.shapeAngle, -Math.PI / 2) < 0.4 && blob.stretch > 0.05;
 }
-assert.ok(pendingDirectionUpdated && redirectedCompleted, "changing input during reversal updates the pending direction and completes safely");
+assert.ok(redirectedCompleted && redirectMaximumStep <= 0.05201, "changing input mid-turn follows the latest direction without a spin");
 
 const holdReversalEnv = createEnvironment();
 const holdReversalDebug = holdReversalEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
@@ -294,17 +286,17 @@ holdReversalEnv.playArea.dispatch("pointerdown", { pointerId: 71, clientX: 300, 
 holdReversalEnv.step(90);
 holdReversalEnv.playArea.dispatch("pointermove", { pointerId: 71, clientX: 800, clientY: 384 });
 let holdMovedRight = false;
-const holdReversalPhases = new Set();
+let holdTurnSoftness = 0;
 for (let frame = 0; frame < 420; frame += 1) {
   holdReversalEnv.step(1);
   const frameState = holdReversalDebug.snapshot();
   holdMovedRight ||= frameState.force.x > 0 && frameState.blobs.some((blob) => blob.vx > 0);
-  holdReversalPhases.add(frameState.blobs[0].reversalPhase);
+  holdTurnSoftness = Math.max(holdTurnSoftness, frameState.blobs[0].turnSoftness);
 }
 const holdReversalState = holdReversalDebug.snapshot();
 assert.ok(holdMovedRight, "moving a long press across the screen reverses through the shared force and shape path");
-assert.ok(holdReversalPhases.has("shrinking") && holdReversalPhases.has("neutral") && holdReversalPhases.has("switched"), "long-press reversal passes through all neutral phases");
-assert.ok(holdReversalState.blobs.every((blob) => [blob.shapeAngle, blob.stretch, blob.tailLag].every(Number.isFinite)), "long-press direction change keeps liquid shape state finite");
+assert.ok(holdTurnSoftness > 0.1, "long-press direction change uses the same soft jelly turn response");
+assert.ok(holdReversalState.blobs.every((blob) => [blob.shapeAngle, blob.stretch, blob.tailLag].every(Number.isFinite)), "long-press direction change keeps jelly shape state finite");
 holdReversalEnv.playArea.dispatch("pointercancel", { pointerId: 71 });
 assert.equal(holdReversalDebug.snapshot().pointerCount, 0, "pointercancel clears the hold after reversal");
 
@@ -315,8 +307,8 @@ releaseDuringReversalEnv.step(1);
 releaseDuringReversalEnv.playArea.dispatch("pointerdown", { pointerId: 81, clientX: 300, clientY: 384 });
 releaseDuringReversalEnv.step(90);
 releaseDuringReversalEnv.playArea.dispatch("pointermove", { pointerId: 81, clientX: 800, clientY: 384 });
-for (let frame = 0; frame < 240 && releaseDuringReversalDebug.snapshot().blobs[0].reversalPhase !== "shrinking"; frame += 1) releaseDuringReversalEnv.step(1);
-assert.equal(releaseDuringReversalDebug.snapshot().blobs[0].reversalPhase, "shrinking", "long press reaches shrinking before release test");
+releaseDuringReversalEnv.step(60);
+assert.ok(releaseDuringReversalDebug.snapshot().blobs[0].turnSoftness > 0.01, "long press reaches a soft turn before release test");
 releaseDuringReversalEnv.playArea.dispatch("pointerup", { pointerId: 81 });
 releaseDuringReversalEnv.step(180);
 const releasedReversalState = releaseDuringReversalDebug.snapshot();
@@ -329,11 +321,11 @@ interruptedEnv.setViewport(1024, 768);
 interruptedDebug.simulateTilt(-1, 0);
 interruptedEnv.step(100);
 interruptedDebug.simulateTilt(1, 0);
-for (let frame = 0; frame < 180 && !interruptedDebug.snapshot().blobs[0].reversing; frame += 1) interruptedEnv.step(1);
-assert.equal(interruptedDebug.snapshot().blobs[0].reversing, true, "background test reaches reversal state");
+for (let frame = 0; frame < 180 && interruptedDebug.snapshot().blobs[0].turnSoftness < 0.1; frame += 1) interruptedEnv.step(1);
+assert.ok(interruptedDebug.snapshot().blobs[0].turnSoftness >= 0.1, "background test reaches a soft turn state");
 interruptedEnv.documentTarget.hidden = true;
 interruptedEnv.documentTarget.dispatch("visibilitychange");
-assert.ok(interruptedDebug.snapshot().blobs.every((blob) => !blob.reversing), "background transition clears transient reversal state");
+assert.ok(interruptedDebug.snapshot().blobs.every((blob) => blob.turnSoftness === 0 && blob.jellyPulse === 0), "background transition clears transient jelly state");
 interruptedEnv.documentTarget.hidden = false;
 interruptedEnv.documentTarget.dispatch("visibilitychange");
 interruptedEnv.windowTarget.dispatch("pageshow");
@@ -351,7 +343,7 @@ assert.ok(reducedState.blobs[0].vx <= 36.01, "reduced motion limits speed");
 assert.equal(reducedState.blobs[0].tailLag, 0, "reduced motion disables the delayed tail");
 assert.ok(Math.abs(reducedState.blobs[0].idleX) < 0.009, "reduced motion keeps idle irregularity subtle");
 assert.equal(reducedState.blobs[0].poolLean, 0, "reduced motion disables asymmetric pool leaning");
-exerciseReversal([-1, 0], [1, 0], "reduced-motion reversal", true);
+exerciseJellyTurn([-1, 0], [1, 0], "reduced-motion reversal", true);
 
 const fallbackEnv = createEnvironment();
 fallbackEnv.windowTarget.pendingTimeout();
