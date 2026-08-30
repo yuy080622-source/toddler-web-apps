@@ -129,6 +129,9 @@ assert.ok(debug, "debug inspection API exists");
 let state = debug.snapshot();
 assert.equal(state.blobCount, 3, "three blobs are stable");
 assert.equal(env.pendingFrames(), 1, "exactly one animation frame is pending");
+assert.ok(Math.abs(state.blobs[0].radius / state.blobs[1].radius - 1.35) < 0.001, "red jelly is 1.35 times the blue reference size");
+assert.ok(Math.abs(state.blobs[2].radius / state.blobs[1].radius - 0.8) < 0.001, "yellow jelly is 0.8 times the blue reference size");
+assert.ok(state.blobs[0].radius > state.blobs[1].radius && state.blobs[1].radius > state.blobs[2].radius, "red, blue, and yellow have a clear large-medium-small order");
 
 const startX = state.blobs.map((blob) => blob.x);
 env.windowTarget.dispatch("deviceorientation", { gamma: 20, beta: 0 });
@@ -185,9 +188,17 @@ env.step(5);
 state = debug.snapshot();
 assert.deepEqual([state.width, state.height], [844, 390], "landscape boundary recalculated");
 assert.ok(state.blobs.every((blob) => blob.x >= 0 && blob.x <= 844 && blob.y >= 0 && blob.y <= 390), "rotation keeps blobs visible");
+assert.ok(Math.abs(state.blobs[0].radius / state.blobs[1].radius - 1.35) < 0.001 && Math.abs(state.blobs[2].radius / state.blobs[1].radius - 0.8) < 0.001, "landscape resize preserves the size ratio");
 env.setViewport(390, 844);
 env.step(5);
 assert.ok(debug.snapshot().blobs.every((blob) => blob.x >= 0 && blob.x <= 390 && blob.y >= 0 && blob.y <= 844), "portrait restoration keeps blobs visible");
+env.setViewport(1024, 768);
+env.step(5);
+state = debug.snapshot();
+assert.ok(state.blobs.every((blob) => blob.x >= blob.radius && blob.x <= 1024 - blob.radius && blob.y >= blob.radius && blob.y <= 768 - blob.radius), "tablet layout keeps all differently sized jellies inside their radius-aware bounds");
+assert.ok(state.blobs[2].radius >= 48, "small yellow jelly remains large enough for its face and internal highlight");
+env.setViewport(390, 844);
+env.step(5);
 
 env.documentTarget.hidden = true;
 env.documentTarget.dispatch("visibilitychange");

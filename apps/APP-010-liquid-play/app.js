@@ -12,6 +12,7 @@
     { base: "#35b7bc", light: "rgba(168, 239, 235, .86)", edge: "rgba(21, 126, 139, .76)" },
     { base: "#efc247", light: "rgba(255, 234, 157, .88)", edge: "rgba(199, 143, 34, .76)" }
   ];
+  const sizeScales = [1.35, 1, 0.8];
   const pointers = new Map();
   const force = { x: 0, y: 0 };
   const tilt = { x: 0, y: 0, targetX: 0, targetY: 0 };
@@ -32,24 +33,25 @@
   let holdActive = false;
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const baseRadius = () => clamp(Math.min(width, height) * 0.155, 60, 93);
 
   function announce(message) {
     status.textContent = message;
   }
 
   function makeBlobs() {
-    const base = clamp(Math.min(width, height) * 0.17, 62, 126);
     const starts = [
-      [0.25, 0.28, 1],
-      [0.70, 0.48, 0.9],
-      [0.38, 0.76, 0.82]
+      [0.26, 0.25],
+      [0.72, 0.48],
+      [0.38, 0.77]
     ];
-    blobs = starts.map(([px, py, scale], index) => ({
+    const base = baseRadius();
+    blobs = starts.map(([px, py], index) => ({
       x: width * px,
       y: height * py,
       vx: 0,
       vy: 0,
-      radius: base * scale,
+      radius: base * sizeScales[index],
       color: colors[index],
       contact: 0,
       wallContact: 0,
@@ -93,7 +95,7 @@
       blobs.forEach((blob) => {
         blob.x *= scaleX;
         blob.y *= scaleY;
-        blob.radius = clamp(Math.min(width, height) * (0.17 - blobs.indexOf(blob) * 0.014), 56, 126);
+        blob.radius = baseRadius() * sizeScales[blobs.indexOf(blob)];
       });
       keepInside();
     }
