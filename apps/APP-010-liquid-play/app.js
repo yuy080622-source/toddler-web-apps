@@ -51,7 +51,11 @@
       wallContact: 0,
       shapeAngle: 0,
       stretch: 0,
-      wobble: 0
+      wobble: 0,
+      tailLag: 0,
+      idlePhase: index * 2.17,
+      idleX: 0,
+      idleY: 0
     }));
     keepInside();
   }
@@ -229,8 +233,8 @@
 
   function resolveContacts() {
     blobs.forEach((blob) => {
-      blob.contact *= 0.82;
-      blob.wallContact *= 0.78;
+      blob.contact *= 0.86;
+      blob.wallContact *= 0.84;
     });
     for (let i = 0; i < blobs.length; i += 1) {
       for (let j = i + 1; j < blobs.length; j += 1) {
@@ -254,7 +258,7 @@
         a.vy -= ny * correction * 1.7;
         b.vx += nx * correction * 1.7;
         b.vy += ny * correction * 1.7;
-        const compression = clamp(overlap / desired, 0, 0.18);
+        const compression = clamp(overlap / desired, 0, 0.24);
         a.contact = Math.max(a.contact, compression);
         b.contact = Math.max(b.contact, compression);
       }
@@ -279,49 +283,59 @@
       }
       blob.x += blob.vx * dt;
       blob.y += blob.vy * dt;
-      const margin = blob.radius * 0.82;
+      const margin = blob.radius;
       if (blob.x < margin || blob.x > width - margin) {
         blob.x = clamp(blob.x, margin, width - margin);
         blob.vx *= reducedMotion ? -0.12 : -0.25;
-        blob.wallContact = Math.max(blob.wallContact, reducedMotion ? 0.035 : 0.12);
+        blob.wallContact = Math.max(blob.wallContact, reducedMotion ? 0.035 : 0.18);
       }
       if (blob.y < margin || blob.y > height - margin) {
         blob.y = clamp(blob.y, margin, height - margin);
         blob.vy *= reducedMotion ? -0.12 : -0.25;
-        blob.wallContact = Math.max(blob.wallContact, reducedMotion ? 0.035 : 0.12);
+        blob.wallContact = Math.max(blob.wallContact, reducedMotion ? 0.035 : 0.18);
       }
     });
     resolveContacts();
     keepInside();
-    updateShapes();
+    updateShapes(now);
   }
 
   function angleDifference(target, current) {
     return Math.atan2(Math.sin(target - current), Math.cos(target - current));
   }
 
-  function updateShapes() {
+  function updateShapes(now) {
     blobs.forEach((blob) => {
       const speed = Math.hypot(blob.vx, blob.vy);
       const moving = speed > 1.2;
       const targetAngle = moving ? Math.atan2(blob.vy, blob.vx) : blob.shapeAngle;
       const turn = angleDifference(targetAngle, blob.shapeAngle);
-      const angleResponse = reducedMotion ? 0.045 : 0.085;
+      const angleResponse = reducedMotion ? 0.045 : 0.058;
       blob.shapeAngle += turn * angleResponse;
-      const targetStretch = reducedMotion ? clamp(speed / 600, 0, 0.075) : clamp(speed / 310, 0, 0.30);
-      const stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.095) : (reducedMotion ? 0.025 : 0.055);
+      const accelerationPull = reducedMotion ? 0 : clamp(Math.hypot(force.x, force.y) * 0.055, 0, 0.055);
+      const targetStretch = reducedMotion
+        ? clamp(speed / 600, 0, 0.075)
+        : clamp(speed / 245 + accelerationPull + Math.abs(turn) * 0.018, 0, 0.42);
+      const stretchResponse = targetStretch > blob.stretch ? (reducedMotion ? 0.045 : 0.105) : (reducedMotion ? 0.025 : 0.032);
       blob.stretch += (targetStretch - blob.stretch) * stretchResponse;
-      const turnWobble = reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 90, 1) * 0.055, 0, 0.09);
-      blob.wobble += (turnWobble - blob.wobble) * (turnWobble > blob.wobble ? 0.13 : 0.065);
+      const turnWobble = reducedMotion ? 0 : clamp(turn * Math.min(speed / 75, 1) * 0.09, -0.13, 0.13);
+      blob.wobble += (turnWobble - blob.wobble) * (Math.abs(turnWobble) > Math.abs(blob.wobble) ? 0.11 : 0.042);
+      const targetTail = reducedMotion ? 0 : clamp(Math.abs(turn) * Math.min(speed / 70, 1) * 0.12 + blob.stretch * 0.22, 0, 0.18);
+      blob.tailLag += (targetTail - blob.tailLag) * (targetTail > blob.tailLag ? 0.075 : 0.026);
+      const idleAmount = reducedMotion ? 0.008 : 0.026;
+      const idleTargetX = Math.sin(now / 1450 + blob.idlePhase) * idleAmount;
+      const idleTargetY = Math.sin(now / 1900 + blob.idlePhase * 1.43) * idleAmount * 0.72;
+      blob.idleX += (idleTargetX - blob.idleX) * 0.018;
+      blob.idleY += (idleTargetY - blob.idleY) * 0.018;
     });
   }
 
   function drawBlob(blob) {
     const squash = (blob.contact + blob.wallContact) * (reducedMotion ? 0.28 : 1);
     const stretch = blob.stretch;
-    const front = blob.radius * (1 + stretch * 1.5 - squash * 0.25);
-    const back = blob.radius * (1 + stretch * 0.28 + squash * 0.2);
-    const vertical = blob.radius * (1 - stretch * 0.42 + squash * 0.55);
+    const front = blob.radius * (1 + stretch * 1.82 - squash * 0.32 + blob.idleX);
+    const back = blob.radius * (1 + stretch * 0.52 + blob.tailLag + squash * 0.24 - blob.idleX * 0.45);
+    const vertical = blob.radius * (1 - stretch * 0.46 + squash * 0.82 + blob.idleY);
     const wobble = blob.wobble * blob.radius;
     context.save();
     context.translate(blob.x, blob.y);
@@ -337,9 +351,9 @@
     context.fillStyle = gradient;
     context.beginPath();
     context.moveTo(front, 0);
-    context.bezierCurveTo(front, -vertical * 0.552, front * 0.552, -vertical, wobble, -vertical);
-    context.bezierCurveTo(-back * 0.552, -vertical, -back, -vertical * 0.552, -back, 0);
-    context.bezierCurveTo(-back, vertical * 0.552, -back * 0.552, vertical, -wobble, vertical);
+    context.bezierCurveTo(front, -vertical * 0.552, front * 0.552, -vertical, wobble * 0.35, -vertical);
+    context.bezierCurveTo(-back * 0.50 + wobble, -vertical, -back, -vertical * 0.50, -back, wobble * 0.18);
+    context.bezierCurveTo(-back, vertical * 0.58, -back * 0.52 - wobble, vertical, -wobble * 0.45, vertical);
     context.bezierCurveTo(front * 0.552, vertical, front, vertical * 0.552, front, 0);
     context.closePath();
     context.fill();
@@ -353,19 +367,19 @@
   }
 
   function drawFace(blob, front, back, vertical, squash) {
-    const faceCenter = (front - back) * 0.045;
-    const eyeGap = blob.radius * (0.25 + blob.stretch * 0.34);
+    const faceCenter = (front - back) * 0.055 - blob.tailLag * blob.radius * 0.08;
+    const eyeGap = blob.radius * (0.25 + blob.stretch * 0.46);
     const eyeY = -vertical * 0.08;
     const eyeRadiusX = Math.max(2.4, blob.radius * 0.038 * (1 + blob.stretch * 0.22));
     const eyeRadiusY = Math.max(2.2, blob.radius * 0.046 * (1 - squash * 0.65));
-    context.globalAlpha = 0.68;
+    context.globalAlpha = 0.58;
     context.fillStyle = "#244a45";
     context.beginPath();
     context.ellipse(faceCenter - eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
     context.ellipse(faceCenter + eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
     context.fill();
     const mouthY = vertical * 0.18;
-    const mouthWidth = blob.radius * (0.16 + blob.stretch * 0.14);
+    const mouthWidth = blob.radius * (0.15 + blob.stretch * 0.18);
     const surprise = clamp((blob.contact + blob.wallContact) * 4, 0, 1);
     context.strokeStyle = "#244a45";
     context.lineWidth = Math.max(2, blob.radius * 0.025);
@@ -436,8 +450,8 @@
   window.__LIQUID_PLAY_DEBUG__ = Object.freeze({
     snapshot: () => ({
       blobCount: blobs.length,
-      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble }) => ({
-        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble
+      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY }) => ({
+        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, idleX, idleY
       })),
       force: { ...force },
       sensorState,

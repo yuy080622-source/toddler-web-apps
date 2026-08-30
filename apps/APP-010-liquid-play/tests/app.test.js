@@ -96,7 +96,9 @@ state = debug.snapshot();
 assert.ok(state.blobs.every((blob, index) => blob.x > startX[index]), "tilt moves blobs toward gravity");
 assert.equal(state.sensorState, "active", "valid sensor samples activate tilt input");
 assert.ok(state.blobs.every((blob) => blob.x >= blob.radius * 0.8 && blob.x <= state.width - blob.radius * 0.8), "blobs remain horizontal bounds");
-assert.ok(state.blobs.some((blob) => blob.stretch > 0.06), "moving blobs visibly stretch in travel direction");
+assert.ok(state.blobs.some((blob) => blob.stretch > 0.09), "moving blobs have stronger travel-direction stretch");
+assert.ok(state.blobs.some((blob) => blob.tailLag > 0.01), "rear shape follows with a delayed liquid tail");
+assert.ok(state.blobs.some((blob) => Math.abs(blob.idleX) > 0.001 || Math.abs(blob.idleY) > 0.001), "slow irregular resting shape is active");
 assert.ok(env.drawCalls.filter(([name]) => name === "bezierCurveTo").length >= 6, "soft teardrop paths are drawn");
 assert.ok(env.drawCalls.filter(([name]) => name === "ellipse").length >= 6, "two face eyes are drawn on every blob");
 assert.ok(env.drawCalls.filter(([name]) => name === "quadraticCurveTo").length >= 3, "small smiles are drawn with the blob transform");
@@ -109,6 +111,7 @@ assert.ok(debug.snapshot().blobs[0].stretch > 0, "shape does not snap back immed
 env.step(90);
 const beforeHold = debug.snapshot();
 assert.ok(beforeHold.blobs[0].stretch < stretchedBeforeStop, "shape eases back as speed falls");
+assert.ok(beforeHold.blobs[0].tailLag > 0, "tail remains briefly while the body eases back");
 env.playArea.dispatch("pointerdown", { pointerId: 1, clientX: 20, clientY: 800 });
 env.step(15);
 assert.equal(debug.snapshot().holdActive, true, "long press activates after threshold");
@@ -155,6 +158,21 @@ assert.equal(state.blobCount, 3, "two-minute simulation does not grow blob count
 assert.equal(env.pendingFrames(), 1, "two-minute simulation keeps one loop");
 assert.ok(state.blobs.every((blob) => Number.isFinite(blob.x) && Number.isFinite(blob.y)), "long run stays finite");
 
+const wallEnv = createEnvironment();
+const wallDebug = wallEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+wallDebug.simulateTilt(1, 0);
+let maximumWallContact = 0;
+for (let i = 0; i < 1200; i += 1) {
+  wallEnv.step(1);
+  maximumWallContact = Math.max(maximumWallContact, ...wallDebug.snapshot().blobs.map((blob) => blob.wallContact));
+}
+assert.ok(maximumWallContact >= 0.14, `wall contact creates a clearly stronger soft compression state (${maximumWallContact})`);
+
+const contactEnv = createEnvironment();
+contactEnv.setViewport(180, 180);
+contactEnv.step(5);
+assert.ok(contactEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().blobs.some((blob) => blob.contact > 0), "blob overlap creates mutual liquid compression");
+
 const reducedEnv = createEnvironment(true);
 const reducedDebug = reducedEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
 reducedDebug.simulateTilt(1, 0);
@@ -164,6 +182,8 @@ const reducedState = reducedDebug.snapshot();
 assert.equal(reducedState.reducedMotion, true, "reduced motion is detected");
 assert.ok(reducedState.blobs[0].x > reducedStart, "reduced motion keeps play active");
 assert.ok(reducedState.blobs[0].vx <= 36.01, "reduced motion limits speed");
+assert.equal(reducedState.blobs[0].tailLag, 0, "reduced motion disables the delayed tail");
+assert.ok(Math.abs(reducedState.blobs[0].idleX) < 0.009, "reduced motion keeps idle irregularity subtle");
 
 const fallbackEnv = createEnvironment();
 fallbackEnv.windowTarget.pendingTimeout();
