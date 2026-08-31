@@ -33,6 +33,8 @@
   let sensorFailureTimer = 0;
   let holdStart = 0;
   let holdActive = false;
+  let holdSignalStrength = 0;
+  const holdPoint = { x: 0, y: 0 };
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const baseRadius = () => clamp(Math.min(width, height) * 0.155, 60, 93);
@@ -64,6 +66,7 @@
       turnSoftness: 0,
       jellyPulse: 0,
       faceTilt: 0,
+      mouthActivity: 0,
       idlePhase: index * 2.17,
       idleX: 0,
       idleY: 0,
@@ -254,6 +257,7 @@
     if (!pointers.size) {
       holdActive = false;
       holdStart = 0;
+      holdSignalStrength = 0;
     }
   }
 
@@ -266,6 +270,9 @@
     let targetY = tilt.y;
     if (holdActive) {
       const point = pointerCentroid();
+      holdPoint.x = point.x;
+      holdPoint.y = point.y;
+      holdSignalStrength += (1 - holdSignalStrength) * (reducedMotion ? 0.055 : 0.11);
       const cx = blobs.reduce((sum, blob) => sum + blob.x, 0) / blobs.length;
       const cy = blobs.reduce((sum, blob) => sum + blob.y, 0) / blobs.length;
       const dx = point.x - cx;
@@ -274,6 +281,8 @@
       const strength = Math.min(1, length / Math.max(120, Math.min(width, height) * 0.45));
       targetX = dx / length * strength;
       targetY = dy / length * strength;
+    } else {
+      holdSignalStrength = 0;
     }
     const response = reducedMotion ? 0.08 : 0.16;
     force.x += (targetX - force.x) * response;
@@ -385,6 +394,12 @@
       blob.jellyPulse += (pulseTarget - blob.jellyPulse) * (pulseTarget > blob.jellyPulse ? 0.16 : 0.036);
       const targetFaceTilt = reducedMotion ? 0 : clamp(blob.vy / 126 * 0.12, -0.12, 0.12);
       blob.faceTilt += (targetFaceTilt - blob.faceTilt) * 0.08;
+      const movingMouth = clamp((speed - 7) / 34, 0, reducedMotion ? 0.52 : 0.78);
+      const mouthTarget = holdActive ? Math.max(movingMouth, reducedMotion ? 0.38 : 0.66) : movingMouth;
+      const mouthResponse = mouthTarget > blob.mouthActivity
+        ? (reducedMotion ? 0.04 : 0.075)
+        : (reducedMotion ? 0.024 : 0.038);
+      blob.mouthActivity += (mouthTarget - blob.mouthActivity) * mouthResponse;
       const idleAmount = reducedMotion ? 0.008 : 0.034;
       const idleTargetX = Math.sin(now / 1450 + blob.idlePhase) * idleAmount;
       const idleTargetY = Math.sin(now / 1900 + blob.idlePhase * 1.43) * idleAmount * 0.72;
@@ -462,7 +477,8 @@
     context.save();
     context.translate(blob.x, blob.y);
     context.rotate(blob.faceTilt);
-    context.globalAlpha = 0.52;
+    const faceAlpha = 0.52;
+    context.globalAlpha = faceAlpha;
     context.fillStyle = "#244a45";
     context.beginPath();
     context.ellipse(faceCenter - eyeGap, eyeY, eyeRadiusX, eyeRadiusY, 0, 0, Math.PI * 2);
@@ -474,24 +490,62 @@
     context.strokeStyle = "#244a45";
     context.lineWidth = Math.max(1.7, blob.radius * 0.021);
     context.lineCap = "round";
-    context.beginPath();
-    if (surprise > 0.34) {
-      context.ellipse(faceCenter, mouthY, mouthWidth * 0.42, Math.max(2, vertical * 0.035), 0, 0, Math.PI * 2);
-    } else {
+    const openAmount = clamp(Math.max(blob.mouthActivity, surprise * 0.62), 0, 0.82);
+    if (openAmount < 0.98) {
+      context.globalAlpha = faceAlpha * (1 - openAmount);
+      context.beginPath();
       context.moveTo(faceCenter - mouthWidth, mouthY);
       context.quadraticCurveTo(faceCenter, mouthY + vertical * 0.085, faceCenter + mouthWidth, mouthY);
+      context.stroke();
     }
+    context.globalAlpha = faceAlpha * openAmount;
+    context.beginPath();
+    context.ellipse(
+      faceCenter,
+      mouthY + vertical * 0.025,
+      mouthWidth * (0.24 + openAmount * 0.1),
+      Math.max(1.8, vertical * (0.022 + openAmount * 0.018)),
+      0, 0, Math.PI * 2
+    );
     context.stroke();
     context.restore();
   }
 
-  function draw() {
+  function drawHoldSignal(now) {
+    if (!holdActive || holdSignalStrength <= 0.01) return;
+    const strength = holdSignalStrength * (reducedMotion ? 0.58 : 1);
+    const auraRadius = reducedMotion ? 30 : 38;
+    const aura = context.createRadialGradient(holdPoint.x, holdPoint.y, 1, holdPoint.x, holdPoint.y, auraRadius);
+    aura.addColorStop(0, `rgba(111, 190, 175, ${0.11 * strength})`);
+    aura.addColorStop(0.52, `rgba(111, 190, 175, ${0.055 * strength})`);
+    aura.addColorStop(1, "rgba(111, 190, 175, 0)");
+    context.fillStyle = aura;
+    context.beginPath();
+    context.arc(holdPoint.x, holdPoint.y, auraRadius, 0, Math.PI * 2);
+    context.fill();
+
+    const ringCount = reducedMotion ? 1 : 2;
+    const phase = reducedMotion ? 0.28 : (now % 1800) / 1800;
+    context.lineWidth = reducedMotion ? 1.3 : 1.7;
+    for (let index = 0; index < ringCount; index += 1) {
+      const ringPhase = (phase + index / ringCount) % 1;
+      context.globalAlpha = strength * (1 - ringPhase) * (reducedMotion ? 0.16 : 0.22);
+      context.strokeStyle = "#5ba99a";
+      context.beginPath();
+      context.arc(holdPoint.x, holdPoint.y, 16 + ringPhase * (reducedMotion ? 10 : 21), 0, Math.PI * 2);
+      context.stroke();
+    }
+    context.globalAlpha = 1;
+  }
+
+  function draw(now = performance.now()) {
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     const background = context.createLinearGradient(0, 0, width, height);
     background.addColorStop(0, "#f6fcf8");
     background.addColorStop(1, "#dcefe8");
     context.fillStyle = background;
     context.fillRect(0, 0, width, height);
+    drawHoldSignal(now);
     blobs.forEach(drawBlob);
   }
 
@@ -500,7 +554,7 @@
     const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.033) : 1 / 60;
     lastTime = now;
     update(dt, now);
-    draw();
+    draw(now);
     frameId = requestAnimationFrame(frame);
   }
 
@@ -520,6 +574,7 @@
     pointers.clear();
     holdActive = false;
     holdStart = 0;
+    holdSignalStrength = 0;
     blobs.forEach((blob) => {
       blob.turnSoftness = 0;
       blob.jellyPulse = 0;
@@ -550,8 +605,8 @@
   window.__LIQUID_PLAY_DEBUG__ = Object.freeze({
     snapshot: () => ({
       blobCount: blobs.length,
-      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, turnSoftness, jellyPulse, faceTilt, idleX, idleY, poolLean }) => ({
-        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, turnSoftness, jellyPulse, faceTilt, idleX, idleY, poolLean
+      blobs: blobs.map(({ x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, turnSoftness, jellyPulse, faceTilt, mouthActivity, idleX, idleY, poolLean }) => ({
+        x, y, vx, vy, radius, contact, wallContact, shapeAngle, stretch, wobble, tailLag, turnSoftness, jellyPulse, faceTilt, mouthActivity, idleX, idleY, poolLean
       })),
       force: { ...force },
       sensorState,
@@ -560,6 +615,7 @@
       permissionRequested,
       pointerCount: pointers.size,
       holdActive,
+      holdSignal: { x: holdPoint.x, y: holdPoint.y, strength: holdSignalStrength },
       running,
       framePending: frameId ? 1 : 0,
       reducedMotion,
