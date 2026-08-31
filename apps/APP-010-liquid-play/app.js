@@ -491,48 +491,43 @@
     context.lineWidth = Math.max(1.7, blob.radius * 0.021);
     context.lineCap = "round";
     const openAmount = clamp(Math.max(blob.mouthActivity, surprise * 0.62), 0, 0.82);
-    if (openAmount < 0.98) {
-      context.globalAlpha = faceAlpha * (1 - openAmount);
-      context.beginPath();
-      context.moveTo(faceCenter - mouthWidth, mouthY);
-      context.quadraticCurveTo(faceCenter, mouthY + vertical * 0.085, faceCenter + mouthWidth, mouthY);
-      context.stroke();
-    }
-    context.globalAlpha = faceAlpha * openAmount;
+    const activeMouthWidth = mouthWidth * (1 - openAmount * 0.68);
+    const mouthLift = vertical * openAmount * 0.012;
+    const mouthDepth = vertical * (0.085 + openAmount * 0.055);
+    context.globalAlpha = faceAlpha;
     context.beginPath();
-    context.ellipse(
-      faceCenter,
-      mouthY + vertical * 0.025,
-      mouthWidth * (0.24 + openAmount * 0.1),
-      Math.max(1.8, vertical * (0.022 + openAmount * 0.018)),
-      0, 0, Math.PI * 2
-    );
+    context.moveTo(faceCenter - activeMouthWidth, mouthY - mouthLift);
+    context.quadraticCurveTo(faceCenter, mouthY + mouthDepth, faceCenter + activeMouthWidth, mouthY - mouthLift);
     context.stroke();
     context.restore();
   }
 
   function drawHoldSignal(now) {
     if (!holdActive || holdSignalStrength <= 0.01) return;
-    const strength = holdSignalStrength * (reducedMotion ? 0.58 : 1);
-    const auraRadius = reducedMotion ? 30 : 38;
-    const aura = context.createRadialGradient(holdPoint.x, holdPoint.y, 1, holdPoint.x, holdPoint.y, auraRadius);
-    aura.addColorStop(0, `rgba(111, 190, 175, ${0.11 * strength})`);
-    aura.addColorStop(0.52, `rgba(111, 190, 175, ${0.055 * strength})`);
+    const strength = holdSignalStrength * (reducedMotion ? 0.8 : 1);
+    const visualX = holdPoint.x;
+    const visualY = holdPoint.y - 10;
+    const auraRadius = reducedMotion ? 58 : 70;
+    const aura = context.createRadialGradient(visualX, visualY, 22, visualX, visualY, auraRadius);
+    aura.addColorStop(0, `rgba(80, 164, 149, ${0.12 * strength})`);
+    aura.addColorStop(0.5, `rgba(80, 164, 149, ${0.095 * strength})`);
     aura.addColorStop(1, "rgba(111, 190, 175, 0)");
     context.fillStyle = aura;
     context.beginPath();
-    context.arc(holdPoint.x, holdPoint.y, auraRadius, 0, Math.PI * 2);
+    context.arc(visualX, visualY, auraRadius, 0, Math.PI * 2);
     context.fill();
 
     const ringCount = reducedMotion ? 1 : 2;
-    const phase = reducedMotion ? 0.28 : (now % 1800) / 1800;
-    context.lineWidth = reducedMotion ? 1.3 : 1.7;
+    const phase = reducedMotion ? 0.22 : (now % 2100) / 2100;
+    const innerRadius = 38;
+    const spread = reducedMotion ? 16 : 28;
+    context.lineWidth = reducedMotion ? 1.8 : 2.2;
     for (let index = 0; index < ringCount; index += 1) {
       const ringPhase = (phase + index / ringCount) % 1;
-      context.globalAlpha = strength * (1 - ringPhase) * (reducedMotion ? 0.16 : 0.22);
-      context.strokeStyle = "#5ba99a";
+      context.globalAlpha = strength * (1 - ringPhase * 0.62) * (reducedMotion ? 0.25 : 0.30);
+      context.strokeStyle = "#469486";
       context.beginPath();
-      context.arc(holdPoint.x, holdPoint.y, 16 + ringPhase * (reducedMotion ? 10 : 21), 0, Math.PI * 2);
+      context.arc(visualX, visualY, innerRadius + ringPhase * spread, 0, Math.PI * 2);
       context.stroke();
     }
     context.globalAlpha = 1;
@@ -615,7 +610,16 @@
       permissionRequested,
       pointerCount: pointers.size,
       holdActive,
-      holdSignal: { x: holdPoint.x, y: holdPoint.y, strength: holdSignalStrength },
+      holdSignal: {
+        x: holdPoint.x,
+        y: holdPoint.y,
+        visualX: holdPoint.x,
+        visualY: holdPoint.y - 10,
+        strength: holdSignalStrength,
+        innerRadius: 38,
+        outerRadius: reducedMotion ? 54 : 66,
+        ringCount: reducedMotion ? 1 : 2
+      },
       running,
       framePending: frameId ? 1 : 0,
       reducedMotion,
