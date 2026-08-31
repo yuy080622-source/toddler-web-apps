@@ -11,6 +11,11 @@ class Target {
     if (!this.listeners.has(type)) this.listeners.set(type, []);
     this.listeners.get(type).push(handler);
   }
+  removeEventListener(type, handler) {
+    if (!this.listeners.has(type)) return;
+    this.listeners.set(type, this.listeners.get(type).filter((item) => item !== handler));
+  }
+  listenerCount(type) { return (this.listeners.get(type) || []).length; }
   dispatch(type, event = {}) {
     (this.listeners.get(type) || []).forEach((handler) => handler({
       preventDefault() {}, stopPropagation() {}, pointerId: 1, clientX: 0, clientY: 0,
@@ -19,8 +24,10 @@ class Target {
   }
 }
 
-function createEnvironment(reduced = false) {
+function createEnvironment(reduced = false, sensorOptions = {}) {
   let now = 0;
+  let nextTimer = 1;
+  const timers = new Map();
   let viewport = { width: 390, height: 844 };
   let nextFrame = 1;
   const frames = new Map();
@@ -50,9 +57,14 @@ function createEnvironment(reduced = false) {
   documentTarget.getElementById = (id) => elements[id];
   windowTarget.devicePixelRatio = 1;
   windowTarget.orientation = 0;
-  windowTarget.setTimeout = (fn) => { windowTarget.pendingTimeout = fn; return 1; };
-  windowTarget.clearTimeout = () => { windowTarget.pendingTimeout = null; };
-  windowTarget.DeviceOrientationEvent = function DeviceOrientationEvent() {};
+  windowTarget.setTimeout = (fn, delay = 0) => { const id = nextTimer++; timers.set(id, { fn, delay }); return id; };
+  windowTarget.clearTimeout = (id) => { timers.delete(id); };
+  if (sensorOptions.supported !== false) {
+    windowTarget.DeviceOrientationEvent = function DeviceOrientationEvent() {};
+    if (sensorOptions.permissionResult) {
+      windowTarget.DeviceOrientationEvent.requestPermission = () => Promise.resolve(sensorOptions.permissionResult);
+    }
+  }
   windowTarget.screen = { orientation: { angle: 0 } };
   const sandbox = {
     window: windowTarget,
@@ -61,7 +73,7 @@ function createEnvironment(reduced = false) {
     DeviceOrientationEvent: windowTarget.DeviceOrientationEvent,
     matchMedia: () => media,
     performance: { now: () => now },
-    clearTimeout: () => { windowTarget.pendingTimeout = null; },
+    clearTimeout: (id) => { timers.delete(id); },
     requestAnimationFrame: (callback) => { const id = nextFrame++; frames.set(id, callback); return id; },
     cancelAnimationFrame: (id) => frames.delete(id),
     Math, Number, Object, Map, console
@@ -78,9 +90,17 @@ function createEnvironment(reduced = false) {
       pending.forEach(([, callback]) => callback(now));
     }
   }
-  return { sandbox, playArea, button, documentTarget, windowTarget, media, step, drawCalls,
+  function runTimers(maxDelay = Infinity) {
+    [...timers.entries()].filter(([, timer]) => timer.delay <= maxDelay).forEach(([id, timer]) => {
+      if (!timers.has(id)) return;
+      timers.delete(id);
+      timer.fn();
+    });
+  }
+  return { sandbox, playArea, button, documentTarget, windowTarget, media, step, drawCalls, runTimers,
     setViewport: (width, height) => { viewport = { width, height }; windowTarget.dispatch("resize"); },
-    pendingFrames: () => frames.size };
+    pendingFrames: () => frames.size,
+    pendingTimers: () => timers.size };
 }
 
 function angularDistance(a, b) {
@@ -357,7 +377,82 @@ assert.equal(reducedState.blobs[0].poolLean, 0, "reduced motion disables asymmet
 exerciseJellyTurn([-1, 0], [1, 0], "reduced-motion reversal", true);
 
 const fallbackEnv = createEnvironment();
-fallbackEnv.windowTarget.pendingTimeout();
+fallbackEnv.runTimers(2500);
 assert.equal(fallbackEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().sensorState, "fallback", "missing sensor samples fall back without error");
 
-console.log("APP-010 automated tests: PASS");
+async function runSensorPermissionTests() {
+  const alreadyAllowedEnv = createEnvironment(false, { permissionResult: "granted" });
+  const alreadyAllowedDebug = alreadyAllowedEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+  assert.equal(alreadyAllowedEnv.button.hidden, true, "permission-capable startup keeps the button hidden during the sensor probe");
+  alreadyAllowedEnv.windowTarget.dispatch("deviceorientation", { gamma: 12, beta: 4 });
+  assert.equal(alreadyAllowedDebug.snapshot().sensorState, "active", "a valid startup event activates a previously allowed sensor without a button");
+  assert.equal(alreadyAllowedEnv.button.hidden, true, "previously allowed sensor never exposes the permission button");
+  assert.equal(alreadyAllowedEnv.windowTarget.listenerCount("deviceorientation"), 1, "startup attaches exactly one sensor listener");
+  assert.equal(alreadyAllowedDebug.snapshot().sensorTimerCount, 0, "valid sensor input clears both sensor timers");
+
+  const needsPermissionEnv = createEnvironment(false, { permissionResult: "granted" });
+  const needsPermissionDebug = needsPermissionEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+  needsPermissionEnv.runTimers(600);
+  assert.equal(needsPermissionDebug.snapshot().sensorState, "permission", "missing probe events transition to permission state");
+  assert.equal(needsPermissionEnv.button.hidden, false, "permission button appears only after the short probe expires");
+  needsPermissionEnv.button.dispatch("click");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(needsPermissionDebug.snapshot().sensorState, "checking", "granted permission restarts sensor checking");
+  assert.equal(needsPermissionEnv.button.hidden, true, "granted permission hides the button");
+  needsPermissionEnv.windowTarget.dispatch("deviceorientation", { gamma: 9, beta: 3 });
+  assert.equal(needsPermissionDebug.snapshot().sensorState, "active", "a valid post-grant event activates tilt");
+  assert.equal(needsPermissionEnv.windowTarget.listenerCount("deviceorientation"), 1, "permission restart does not duplicate the sensor listener");
+
+  const deniedEnv = createEnvironment(false, { permissionResult: "denied" });
+  const deniedDebug = deniedEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+  deniedEnv.runTimers(600);
+  deniedEnv.button.dispatch("click");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(deniedDebug.snapshot().sensorState, "fallback", "denied permission transitions to long-press fallback");
+  assert.equal(deniedEnv.button.hidden, true, "denied permission hides the permission button");
+  assert.equal(deniedDebug.snapshot().sensorTimerCount, 0, "denied permission clears sensor timers");
+
+  const noPermissionApiEnv = createEnvironment();
+  const noPermissionApiDebug = noPermissionApiEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+  noPermissionApiEnv.windowTarget.dispatch("deviceorientation", { gamma: 11, beta: 2 });
+  assert.equal(noPermissionApiDebug.snapshot().sensorState, "active", "valid events activate sensors without a permission API");
+  for (let index = 0; index < 31; index += 1) noPermissionApiEnv.windowTarget.dispatch("deviceorientation", { gamma: "invalid", beta: "invalid" });
+  assert.equal(noPermissionApiDebug.snapshot().sensorState, "fallback", "persistently invalid values leave active mode for long-press fallback");
+
+  const noEventEnv = createEnvironment();
+  noEventEnv.runTimers(2500);
+  assert.equal(noEventEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().sensorState, "fallback", "no permission API and no events use long-press fallback");
+
+  const unsupportedEnv = createEnvironment(false, { supported: false });
+  const unsupportedDebug = unsupportedEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+  assert.equal(unsupportedDebug.snapshot().sensorState, "fallback", "unsupported devices immediately use long-press fallback");
+  assert.equal(unsupportedEnv.windowTarget.listenerCount("deviceorientation"), 0, "unsupported devices do not attach a listener");
+
+  const lifecycleEnv = createEnvironment(false, { permissionResult: "granted" });
+  const lifecycleDebug = lifecycleEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+  assert.equal(lifecycleEnv.windowTarget.listenerCount("deviceorientation"), 1, "lifecycle test starts with one listener");
+  lifecycleEnv.windowTarget.dispatch("pageshow");
+  lifecycleEnv.windowTarget.dispatch("pageshow");
+  assert.equal(lifecycleEnv.windowTarget.listenerCount("deviceorientation"), 1, "repeated pageshow never duplicates the listener");
+  assert.ok(lifecycleDebug.snapshot().sensorTimerCount <= 2, "repeated pageshow replaces rather than stacks sensor timers");
+  lifecycleEnv.documentTarget.hidden = true;
+  lifecycleEnv.documentTarget.dispatch("visibilitychange");
+  assert.equal(lifecycleDebug.snapshot().sensorTimerCount, 0, "visibilitychange to hidden clears sensor timers");
+  lifecycleEnv.documentTarget.hidden = false;
+  lifecycleEnv.documentTarget.dispatch("visibilitychange");
+  assert.equal(lifecycleEnv.windowTarget.listenerCount("deviceorientation"), 1, "visibility restoration rechecks with one listener");
+  lifecycleEnv.windowTarget.dispatch("pagehide");
+  assert.equal(lifecycleDebug.snapshot().sensorTimerCount, 0, "pagehide clears sensor timers");
+
+  const reloadEquivalentEnv = createEnvironment(false, { permissionResult: "granted" });
+  reloadEquivalentEnv.windowTarget.dispatch("deviceorientation", { gamma: 8, beta: 1 });
+  assert.equal(reloadEquivalentEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().sensorState, "active", "reload-equivalent initialization recovers from a valid existing permission event");
+  assert.equal(reloadEquivalentEnv.button.hidden, true, "reload-equivalent initialization does not show the button first");
+}
+
+runSensorPermissionTests().then(() => {
+  console.log("APP-010 automated tests: PASS");
+}).catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

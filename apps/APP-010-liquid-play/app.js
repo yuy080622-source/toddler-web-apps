@@ -28,7 +28,9 @@
   let validSensorSamples = 0;
   let invalidSensorSamples = 0;
   let permissionRequested = false;
-  let sensorTimer = 0;
+  let sensorListenerAttached = false;
+  let sensorProbeTimer = 0;
+  let sensorFailureTimer = 0;
   let holdStart = 0;
   let holdActive = false;
 
@@ -116,11 +118,12 @@
   }
 
   function handleOrientation(event) {
+    if (document.hidden) return;
     const beta = Number(event.beta);
     const gamma = Number(event.gamma);
     if (!Number.isFinite(beta) || !Number.isFinite(gamma) || Math.abs(beta) > 180 || Math.abs(gamma) > 90) {
       invalidSensorSamples += 1;
-      if (invalidSensorSamples > 30 && validSensorSamples < 3) useFallback("センサーを使えないため、長押しで遊べます");
+      if (invalidSensorSamples > 30) useFallback("センサーを使えないため、長押しで遊べます");
       return;
     }
     invalidSensorSamples = 0;
@@ -140,19 +143,55 @@
     tilt.targetY = normalize(y);
     sensorState = "active";
     permissionButton.hidden = true;
-    clearTimeout(sensorTimer);
+    clearSensorTimers();
   }
 
-  function listenForSensor() {
+  function clearSensorTimers() {
+    if (sensorProbeTimer) window.clearTimeout(sensorProbeTimer);
+    if (sensorFailureTimer) window.clearTimeout(sensorFailureTimer);
+    sensorProbeTimer = 0;
+    sensorFailureTimer = 0;
+  }
+
+  function attachSensorListener() {
+    if (sensorListenerAttached) return;
     window.addEventListener("deviceorientation", handleOrientation, true);
-    clearTimeout(sensorTimer);
-    sensorTimer = window.setTimeout(() => {
-      if (validSensorSamples < 3) useFallback("長押しするとジェリーが指へ寄ります");
+    sensorListenerAttached = true;
+  }
+
+  function beginSensorCheck({ offerPermission = true } = {}) {
+    clearSensorTimers();
+    attachSensorListener();
+    validSensorSamples = 0;
+    invalidSensorSamples = 0;
+    sensorState = "checking";
+    permissionButton.hidden = true;
+    sensorFailureTimer = window.setTimeout(() => {
+      sensorFailureTimer = 0;
+      if (sensorState === "checking") useFallback("長押しするとジェリーが指へ寄ります");
     }, 2500);
+    if (offerPermission && typeof DeviceOrientationEvent.requestPermission === "function") {
+      sensorProbeTimer = window.setTimeout(() => {
+        sensorProbeTimer = 0;
+        if (sensorState !== "checking") return;
+        if (permissionRequested) {
+          useFallback("長押しするとジェリーが指へ寄ります");
+          return;
+        }
+        if (sensorFailureTimer) window.clearTimeout(sensorFailureTimer);
+        sensorFailureTimer = 0;
+        sensorState = "permission";
+        permissionButton.hidden = false;
+        permissionButton.disabled = false;
+        announce("長押しでも遊べます");
+      }, 600);
+    }
   }
 
   function useFallback(message) {
-    if (sensorState !== "active") sensorState = "fallback";
+    sensorState = "fallback";
+    clearSensorTimers();
+    permissionButton.hidden = true;
     tilt.targetX = 0;
     tilt.targetY = 0;
     announce(message);
@@ -167,8 +206,7 @@
       const result = await DeviceOrientationEvent.requestPermission();
       permissionButton.hidden = true;
       if (result === "granted") {
-        sensorState = "checking";
-        listenForSensor();
+        beginSensorCheck({ offerPermission: false });
         announce("端末をかたむけて遊べます");
       } else {
         useFallback("長押しするとジェリーが指へ寄ります");
@@ -180,17 +218,13 @@
   }
 
   function setupSensor() {
+    clearSensorTimers();
+    permissionButton.hidden = true;
     if (!("DeviceOrientationEvent" in window)) {
       useFallback("長押しするとジェリーが指へ寄ります");
       return;
     }
-    if (typeof DeviceOrientationEvent.requestPermission === "function") {
-      sensorState = "permission";
-      permissionButton.hidden = false;
-      announce("長押しでも遊べます");
-      return;
-    }
-    listenForSensor();
+    beginSensorCheck();
   }
 
   function pointerCentroid() {
@@ -478,6 +512,7 @@
   }
 
   function stop() {
+    clearSensorTimers();
     running = false;
     if (frameId) cancelAnimationFrame(frameId);
     frameId = 0;
@@ -500,9 +535,12 @@
   playArea.addEventListener("lostpointercapture", endPointer);
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", resize);
-  document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stop();
+    else { setupSensor(); start(); }
+  });
   window.addEventListener("pagehide", stop);
-  window.addEventListener("pageshow", () => { resize(); start(); });
+  window.addEventListener("pageshow", () => { resize(); setupSensor(); start(); });
   reduceQuery.addEventListener("change", (event) => { reducedMotion = event.matches; });
 
   resize();
@@ -517,6 +555,9 @@
       })),
       force: { ...force },
       sensorState,
+      sensorListenerAttached,
+      sensorTimerCount: Number(Boolean(sensorProbeTimer)) + Number(Boolean(sensorFailureTimer)),
+      permissionRequested,
       pointerCount: pointers.size,
       holdActive,
       running,
