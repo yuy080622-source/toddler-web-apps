@@ -491,13 +491,30 @@
     context.lineWidth = Math.max(1.7, blob.radius * 0.021);
     context.lineCap = "round";
     const openAmount = clamp(Math.max(blob.mouthActivity, surprise * 0.62), 0, 0.82);
-    const activeMouthWidth = mouthWidth * (1 - openAmount * 0.68);
-    const mouthLift = vertical * openAmount * 0.012;
-    const mouthDepth = vertical * (0.085 + openAmount * 0.055);
+    const activeMouthWidth = mouthWidth * (1 - openAmount * 0.76);
+    const mouthHalfHeight = vertical * openAmount * 0.052;
+    const smileCurve = vertical * 0.085 * (1 - openAmount);
+    const mouthCenterY = mouthY + vertical * openAmount * 0.025;
     context.globalAlpha = faceAlpha;
     context.beginPath();
-    context.moveTo(faceCenter - activeMouthWidth, mouthY - mouthLift);
-    context.quadraticCurveTo(faceCenter, mouthY + mouthDepth, faceCenter + activeMouthWidth, mouthY - mouthLift);
+    context.moveTo(faceCenter - activeMouthWidth, mouthCenterY);
+    context.bezierCurveTo(
+      faceCenter - activeMouthWidth * 0.44,
+      mouthCenterY + smileCurve - mouthHalfHeight,
+      faceCenter + activeMouthWidth * 0.44,
+      mouthCenterY + smileCurve - mouthHalfHeight,
+      faceCenter + activeMouthWidth,
+      mouthCenterY
+    );
+    context.bezierCurveTo(
+      faceCenter + activeMouthWidth * 0.44,
+      mouthCenterY + smileCurve + mouthHalfHeight,
+      faceCenter - activeMouthWidth * 0.44,
+      mouthCenterY + smileCurve + mouthHalfHeight,
+      faceCenter - activeMouthWidth,
+      mouthCenterY
+    );
+    context.closePath();
     context.stroke();
     context.restore();
   }
@@ -508,9 +525,10 @@
     const visualX = holdPoint.x;
     const visualY = holdPoint.y - 10;
     const auraRadius = reducedMotion ? 58 : 70;
-    const aura = context.createRadialGradient(visualX, visualY, 22, visualX, visualY, auraRadius);
-    aura.addColorStop(0, `rgba(80, 164, 149, ${0.12 * strength})`);
-    aura.addColorStop(0.5, `rgba(80, 164, 149, ${0.095 * strength})`);
+    const aura = context.createRadialGradient(visualX, visualY, 24, visualX, visualY, auraRadius);
+    aura.addColorStop(0, `rgba(70, 151, 137, ${0.14 * strength})`);
+    aura.addColorStop(0.42, `rgba(80, 164, 149, ${0.085 * strength})`);
+    aura.addColorStop(0.72, `rgba(97, 179, 164, ${0.035 * strength})`);
     aura.addColorStop(1, "rgba(111, 190, 175, 0)");
     context.fillStyle = aura;
     context.beginPath();
@@ -518,16 +536,17 @@
     context.fill();
 
     const ringCount = reducedMotion ? 1 : 2;
-    const phase = reducedMotion ? 0.22 : (now % 2100) / 2100;
-    const innerRadius = 38;
-    const spread = reducedMotion ? 16 : 28;
-    context.lineWidth = reducedMotion ? 1.8 : 2.2;
+    const phase = reducedMotion ? 0.18 : (now % 2400) / 2400;
+    const baseRadii = reducedMotion ? [38] : [36, 51];
+    const spreads = reducedMotion ? [16] : [12, 17];
     for (let index = 0; index < ringCount; index += 1) {
-      const ringPhase = (phase + index / ringCount) % 1;
-      context.globalAlpha = strength * (1 - ringPhase * 0.62) * (reducedMotion ? 0.25 : 0.30);
+      const ringPhase = reducedMotion ? phase : (phase + index * 0.18) % 1;
+      const distanceFade = index === 0 ? 1 : 0.58;
+      context.globalAlpha = strength * distanceFade * (1 - ringPhase * 0.68) * (reducedMotion ? 0.27 : 0.34);
+      context.lineWidth = (reducedMotion ? 1.8 : 2.35) * (index === 0 ? 1 : 0.68);
       context.strokeStyle = "#469486";
       context.beginPath();
-      context.arc(visualX, visualY, innerRadius + ringPhase * spread, 0, Math.PI * 2);
+      context.arc(visualX, visualY, baseRadii[index] + ringPhase * spreads[index], 0, Math.PI * 2);
       context.stroke();
     }
     context.globalAlpha = 1;
@@ -616,9 +635,13 @@
         visualX: holdPoint.x,
         visualY: holdPoint.y - 10,
         strength: holdSignalStrength,
-        innerRadius: 38,
-        outerRadius: reducedMotion ? 54 : 66,
-        ringCount: reducedMotion ? 1 : 2
+        innerRadius: reducedMotion ? 38 : 36,
+        outerRadius: reducedMotion ? 54 : 68,
+        ringCount: reducedMotion ? 1 : 2,
+        innerAlphaScale: reducedMotion ? 0.27 : 0.34,
+        outerAlphaScale: reducedMotion ? 0 : 0.197,
+        innerLineWidth: reducedMotion ? 1.8 : 2.35,
+        outerLineWidth: reducedMotion ? 0 : 1.598
       },
       running,
       framePending: frameId ? 1 : 0,
