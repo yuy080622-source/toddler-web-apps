@@ -491,10 +491,12 @@
     context.lineWidth = Math.max(1.7, blob.radius * 0.021);
     context.lineCap = "round";
     const openAmount = clamp(Math.max(blob.mouthActivity, surprise * 0.62), 0, 0.82);
-    const activeMouthWidth = mouthWidth * (1 - openAmount * 0.76);
-    const mouthHalfHeight = vertical * openAmount * 0.052;
-    const smileCurve = vertical * 0.085 * (1 - openAmount);
-    const mouthCenterY = mouthY + vertical * openAmount * 0.025;
+    const ovalProgress = clamp(openAmount / (reducedMotion ? 0.5 : 0.62), 0, 1);
+    const ovalAmount = ovalProgress * ovalProgress * (3 - 2 * ovalProgress);
+    const activeMouthWidth = mouthWidth * (1 - ovalAmount * (reducedMotion ? 0.58 : 0.72));
+    const mouthHalfHeight = vertical * ovalAmount * (reducedMotion ? 0.044 : 0.058);
+    const smileCurve = vertical * 0.085 * Math.pow(1 - ovalAmount, 2.4);
+    const mouthCenterY = mouthY + vertical * ovalAmount * 0.018;
     context.globalAlpha = faceAlpha;
     context.beginPath();
     context.moveTo(faceCenter - activeMouthWidth, mouthCenterY);
