@@ -174,7 +174,7 @@ assert.ok(env.drawCalls.filter(([name]) => name === "closePath").length >= 6, "o
 assert.ok(env.drawCalls.filter(([name]) => name === "createRadialGradient").length >= 6, "body depth and inner highlights use layered jelly gradients");
 assert.ok(env.drawCalls.filter(([name]) => name === "clip").length >= 3, "internal jelly texture is clipped inside each body");
 assert.ok(Math.max(...state.blobs.map((blob) => Math.hypot(blob.vx, blob.vy))) > 20, "normal response exceeds the previous approximate terminal speed");
-assert.ok(state.blobs.every((blob) => blob.mouthActivity > 0.35), "moving jellies ease into the small active mouth");
+assert.ok(state.blobs.every((blob) => blob.mouthActivity === 0), "fast tilt-only movement keeps the quiet smile");
 assert.ok(state.blobs.every((blob) => Math.abs(blob.faceTilt) <= 0.121), "active expressions stay upright");
 
 debug.simulateTilt(0, 0);
@@ -203,6 +203,9 @@ assert.equal(state.holdSignal.ringCount, 2, "multiple pointers still create one 
 assert.ok(state.holdSignal.innerAlphaScale > state.holdSignal.outerAlphaScale, "outer ripple is more transparent than the inner ripple");
 assert.ok(state.holdSignal.innerLineWidth > state.holdSignal.outerLineWidth, "outer ripple is thinner than the inner ripple");
 assert.ok(state.blobs.every((blob) => blob.mouthActivity >= 0.6), "long-press attraction keeps the active expression subtle but visible");
+debug.simulateTilt(1, 0);
+env.step(20);
+assert.ok(debug.snapshot().blobs.every((blob) => blob.mouthActivity >= 0.6), "long press keeps the zero mouth when tilt is also active");
 env.drawCalls.length = 0;
 env.step(1);
 const holdArcs = env.drawCalls.filter(([name]) => name === "arc");
@@ -216,6 +219,8 @@ assert.equal(debug.snapshot().holdSignal.strength, 0, "releasing all pointers re
 const velocityAtRelease = Math.hypot(state.blobs[0].vx, state.blobs[0].vy);
 env.step(1);
 assert.ok(Math.hypot(debug.snapshot().blobs[0].vx, debug.snapshot().blobs[0].vy) > 0 && velocityAtRelease > 0, "release preserves short inertia");
+env.step(300);
+assert.ok(debug.snapshot().blobs.every((blob) => blob.mouthActivity < 0.01), "released long press eases every mouth back to the smile");
 
 for (let i = 0; i < 60; i += 1) {
   env.playArea.dispatch("pointerdown", { pointerId: i + 10, clientX: i % 2 ? 380 : 10, clientY: 400 });
@@ -227,20 +232,29 @@ assert.equal(env.pendingFrames(), 1, "rapid taps do not duplicate animation loop
 
 const expressionEnv = createEnvironment();
 const expressionDebug = expressionEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+const lowTiltEnv = createEnvironment();
+const lowTiltDebug = lowTiltEnv.sandbox.window.__LIQUID_PLAY_DEBUG__;
+lowTiltDebug.simulateTilt(0.2, 0);
+lowTiltEnv.step(120);
+assert.ok(lowTiltDebug.snapshot().blobs.some((blob) => Math.abs(blob.vx) > 0), "low tilt still moves the jellies");
+assert.ok(lowTiltDebug.snapshot().blobs.every((blob) => blob.mouthActivity === 0), "low-speed tilt keeps the smile");
 expressionEnv.drawCalls.length = 0;
 expressionEnv.step(1);
 assert.equal(expressionEnv.drawCalls.filter(([name]) => name === "bezierCurveTo").length, 18, "resting frame adds one two-curve smile path per jelly to the body curves");
 assert.equal(expressionEnv.drawCalls.filter(([name]) => name === "ellipse").length, 12, "resting frame has no separate oval mouth path");
 expressionDebug.simulateTilt(1, 0);
-expressionEnv.step(60);
+expressionEnv.step(180);
+assert.ok(expressionDebug.snapshot().blobs.every((blob) => blob.mouthActivity === 0), "sustained fast tilt never activates the zero mouth");
+expressionEnv.playArea.dispatch("pointerdown", { pointerId: 71, clientX: 350, clientY: 700 });
+expressionEnv.step(15);
 const intermediateMouth = expressionDebug.snapshot().blobs[0].mouthActivity;
-assert.ok(intermediateMouth > 0 && intermediateMouth < 0.78, "mouth passes through a continuous intermediate shape");
+assert.ok(intermediateMouth > 0 && intermediateMouth < 0.66, "long press passes through a continuous intermediate mouth shape");
 expressionEnv.drawCalls.length = 0;
 expressionEnv.step(1);
 assert.equal(expressionEnv.drawCalls.filter(([name]) => name === "bezierCurveTo").length, 18, "intermediate expression still draws one mouth path per jelly");
 assert.equal(expressionEnv.drawCalls.filter(([name]) => name === "ellipse").length, 12, "intermediate expression never overlays an oval mouth");
 expressionEnv.step(120);
-assert.ok(expressionDebug.snapshot().blobs[0].mouthActivity > 0.55, "moving jelly reaches the active mouth shape");
+assert.ok(expressionDebug.snapshot().blobs[0].mouthActivity > 0.55, "held jelly reaches the active zero mouth shape");
 expressionEnv.drawCalls.length = 0;
 expressionEnv.step(1);
 assert.equal(expressionEnv.drawCalls.filter(([name]) => name === "bezierCurveTo").length, 18, "active frame draws only one transformed mouth per jelly");
@@ -252,9 +266,9 @@ const activeMouthWidth = activeUpperMouth[5] - activeLowerMouth[5];
 const activeMouthHeight = activeLowerMouth[2] - activeUpperMouth[2];
 assert.ok(activeUpperMouth[2] < activeUpperMouth[6] && activeLowerMouth[2] > activeUpperMouth[6], "active zero mouth curves sit above and below level corners");
 assert.ok(activeMouthHeight > activeMouthWidth * 1.15, "active mouth is a small vertical zero rather than a wide smile or triangle");
-expressionDebug.simulateTilt(0, 0);
+expressionEnv.playArea.dispatch("pointerup", { pointerId: 71 });
 expressionEnv.step(420);
-assert.ok(expressionDebug.snapshot().blobs[0].mouthActivity < 0.08, "stopped jelly eases naturally back to the smile shape");
+assert.ok(expressionDebug.snapshot().blobs[0].mouthActivity < 0.08, "released hold eases naturally back to the smile shape even while moving");
 
 env.setViewport(844, 390);
 env.step(5);
@@ -277,6 +291,7 @@ env.documentTarget.hidden = true;
 env.documentTarget.dispatch("visibilitychange");
 assert.equal(debug.snapshot().running, false, "hidden page stops animation");
 assert.equal(env.pendingFrames(), 0, "hidden page has no pending frame");
+assert.ok(debug.snapshot().blobs.every((blob) => blob.mouthActivity === 0), "background transition restores the normal smile state");
 env.documentTarget.hidden = false;
 env.documentTarget.dispatch("visibilitychange");
 env.windowTarget.dispatch("pageshow");
@@ -297,11 +312,13 @@ for (let i = 0; i < 1200; i += 1) {
   maximumWallContact = Math.max(maximumWallContact, ...wallDebug.snapshot().blobs.map((blob) => blob.wallContact));
 }
 assert.ok(maximumWallContact >= 0.14, `wall contact creates a clearly stronger soft compression state (${maximumWallContact})`);
+assert.ok(wallDebug.snapshot().blobs.every((blob) => blob.mouthActivity === 0), "wall contact alone keeps the smile");
 
 const contactEnv = createEnvironment();
 contactEnv.setViewport(180, 180);
 contactEnv.step(5);
 assert.ok(contactEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().blobs.some((blob) => blob.contact > 0), "blob overlap creates mutual liquid compression");
+assert.ok(contactEnv.sandbox.window.__LIQUID_PLAY_DEBUG__.snapshot().blobs.every((blob) => blob.mouthActivity === 0), "jelly contact alone keeps the smile");
 
 exerciseJellyTurn([-1, 0], [1, 0], "left to right");
 exerciseJellyTurn([1, 0], [-1, 0], "right to left");
@@ -427,7 +444,7 @@ assert.ok(reducedState.blobs[0].vx <= 36.01, "reduced motion limits speed");
 assert.equal(reducedState.blobs[0].tailLag, 0, "reduced motion disables the delayed tail");
 assert.ok(Math.abs(reducedState.blobs[0].idleX) < 0.009, "reduced motion keeps idle irregularity subtle");
 assert.equal(reducedState.blobs[0].poolLean, 0, "reduced motion disables asymmetric pool leaning");
-assert.ok(reducedState.blobs[0].mouthActivity <= 0.53, "reduced motion limits the active expression amount");
+assert.equal(reducedState.blobs[0].mouthActivity, 0, "reduced-motion tilt-only movement keeps the smile");
 exerciseJellyTurn([-1, 0], [1, 0], "reduced-motion reversal", true);
 
 const reducedHoldEnv = createEnvironment(true);
@@ -436,6 +453,7 @@ reducedHoldEnv.step(1);
 reducedHoldEnv.playArea.dispatch("pointerdown", { pointerId: 91, clientX: 200, clientY: 420 });
 reducedHoldEnv.step(15);
 assert.equal(reducedHoldDebug.snapshot().holdActive, true, "reduced motion keeps long-press play active");
+assert.ok(reducedHoldDebug.snapshot().blobs.every((blob) => blob.mouthActivity > 0 && blob.mouthActivity <= 0.38), "reduced-motion hold alone activates the restrained zero mouth");
 assert.ok(reducedHoldDebug.snapshot().holdSignal.strength > 0 && reducedHoldDebug.snapshot().holdSignal.strength < 0.7, "reduced motion reveals the calling sign more gently");
 assert.equal(reducedHoldDebug.snapshot().holdSignal.ringCount, 1, "reduced motion uses one restrained calling ring");
 assert.ok(reducedHoldDebug.snapshot().holdSignal.outerRadius >= 54, "reduced-motion ring still clears the fingertip and remains visible");

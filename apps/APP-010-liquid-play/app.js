@@ -394,8 +394,7 @@
       blob.jellyPulse += (pulseTarget - blob.jellyPulse) * (pulseTarget > blob.jellyPulse ? 0.16 : 0.036);
       const targetFaceTilt = reducedMotion ? 0 : clamp(blob.vy / 126 * 0.12, -0.12, 0.12);
       blob.faceTilt += (targetFaceTilt - blob.faceTilt) * 0.08;
-      const movingMouth = clamp((speed - 7) / 34, 0, reducedMotion ? 0.52 : 0.78);
-      const mouthTarget = holdActive ? Math.max(movingMouth, reducedMotion ? 0.38 : 0.66) : movingMouth;
+      const mouthTarget = holdActive ? (reducedMotion ? 0.38 : 0.66) : 0;
       const mouthResponse = mouthTarget > blob.mouthActivity
         ? (reducedMotion ? 0.04 : 0.075)
         : (reducedMotion ? 0.024 : 0.038);
@@ -486,11 +485,10 @@
     context.fill();
     const mouthY = vertical * 0.18;
     const mouthWidth = blob.radius * (0.13 + stretch * 0.13);
-    const surprise = clamp((blob.contact + blob.wallContact) * 4, 0, 1);
     context.strokeStyle = "#244a45";
     context.lineWidth = Math.max(1.7, blob.radius * 0.021);
     context.lineCap = "round";
-    const openAmount = clamp(Math.max(blob.mouthActivity, surprise * 0.62), 0, 0.82);
+    const openAmount = clamp(blob.mouthActivity, 0, 0.82);
     const ovalProgress = clamp(openAmount / (reducedMotion ? 0.5 : 0.62), 0, 1);
     const ovalAmount = ovalProgress * ovalProgress * (3 - 2 * ovalProgress);
     const activeMouthWidth = mouthWidth * (1 - ovalAmount * (reducedMotion ? 0.58 : 0.72));
@@ -595,6 +593,7 @@
       blob.turnSoftness = 0;
       blob.jellyPulse = 0;
       blob.wobble = 0;
+      blob.mouthActivity = 0;
     });
   }
 
