@@ -32,7 +32,7 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 | APP-006 | カラフル花火 | **公開済み・改善版実機確認PASS** | 効果判定待ちとして観察 |
 | APP-007 | どうぶつをタッチ！ | Repository移行済み。保護者機能あり | タイマー、統計、長押し、実機音声 |
 | APP-008 | いないいないばあ！ | Repository移行済み。主要実装あり | カーテン速度、読み上げ、連打 |
-| APP-010 | ぷにぷにジェリー（仮） | **MVP試作実装済み・長押し専用0口へ変更中** | iPhoneで傾き時の笑顔と長押し時の0口を再確認 |
+| APP-010 | ぷにぷにジェリー（仮） | **MVP試作実装済み・長押し専用0口版Pages反映済み** | iPhoneで傾き時の笑顔と長押し時の0口を再確認 |
 
 ## APP-010 リキッドあそび（仮）
 
@@ -44,7 +44,8 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - 解除・`pointercancel`後は既存補間で笑顔へ戻し、`visibilitychange`・`pagehide`では表情状態も即時初期化
 - reduced-motionも同じ分岐とし、長押し中だけ現行上限0.38の控えめな0口へ移行
 - 0口の縦長形状・サイズ、水面波紋、物理、速度、質感、センサー許可UXは変更なし
-- 自動回帰、JavaScript構文、`git diff --check`はPASS。Pages反映後にiPhone実機再確認を行う
+- 自動回帰、JavaScript構文、`git diff --check`はPASS。実装commit `ed667613c66a98bcf1a40db2786d7cb85362c764`のPages build／deploy成功後、公開版3サイズでCanvas 1枚、DOM 18要素、不要スクロールなし、コンソールエラー／警告なしを確認
+- 残課題はiPhone Safariで、傾き移動中は笑顔、長押し中だけ波紋と0口が同時に見え、解除後に自然復帰するかのPM実機再確認
 
 ### 2026-09-02 活動口を縦長の0形へ修正
 
