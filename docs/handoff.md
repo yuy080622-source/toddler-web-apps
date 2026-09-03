@@ -404,13 +404,14 @@ Codex公開前検証とiPhone実機確認はPASS済み。既存MVPは正式公�
 - 5アプリすべてに`../../shared/clarity.js`、`../../shared/ga4.js`、`../../`向け共通ホーム導線あり
 - 5アプリすべてでホーム短押し非遷移、コンソールエラー・警告なし
 - APP-004の約2秒長押し完了・途中解除・safe areaはiPhone実機PASS
-- GitHub Pages run #26はhandoff commit `7629c27`でsuccess
-- 公開ポータルで4カードの表示順・リンク、全4APPの共通ホーム・Clarity相対参照、横スクロールなし、コンソールエラー・警告なしをPASS
+- APP-010正式公開commit `5e31e9c`のGitHub Pages run `33782365073`はbuild／deployともsuccess
+- 公開ポータルで5カードとAPP-010リンク、公開APP-010でCanvas 1枚、共通ホーム1個、GA4／Clarity各1回の読み込み、1024×768の不要スクロールなしを確認
+- APP-010のホーム約2秒長押し、実機でのGA4／Clarity通信、最終操作回帰はPMのiPhone確認待ち
 
 ## 次の作業
 
 1. 次の公開前検証候補としてAPP-005、APP-007、APP-008から優先対象をPM判断する。
-2. Clarity管理画面でAPP-004を含むURLパス別表示、ヒートマップ、セッション録画を確認する。
+2. GA4／Clarity管理画面でAPP-010を含むURLパス別の受信、ヒートマップ、セッション録画を確認する。
 
 ## 残課題
 
