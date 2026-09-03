@@ -239,7 +239,7 @@
   }
 
   function onPointerDown(event) {
-    if (event.target === permissionButton) return;
+    if (event.target === permissionButton || event.target.closest?.("[data-portal-home]")) return;
     event.preventDefault();
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     try { playArea.setPointerCapture(event.pointerId); } catch (_) { /* capture is optional */ }

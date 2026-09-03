@@ -4,13 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#e9f8f1">
-  <title>ぷにぷにジェリー（仮）</title>
+  <meta name="description" content="端末を傾けたり画面を長押ししたりして、やわらかなジェリーを動かす幼児向けWebアプリです。">
+  <title>ぷにぷにジェリー</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../../shared/portal-home.css">
+  <script src="../../shared/clarity.js"></script>
+  <script src="../../shared/ga4.js"></script>
 </head>
 <body>
   <main id="play-area" aria-label="かたむけるか、画面を長押ししてジェリーを動かす遊び">
     <canvas id="liquid-canvas" aria-hidden="true"></canvas>
+    <button class="portal-home-button" type="button" data-portal-home="../../" aria-label="ホームへ戻る（2秒長押し）">
+      <span class="portal-home-icon" aria-hidden="true">🏠</span>
+    </button>
     <button id="motion-permission" type="button" hidden>
       <span aria-hidden="true">↗</span>
       <span>おうちのかたへ<br>かたむけてあそぶ</span>
@@ -18,5 +25,6 @@
     <p id="status" class="visually-hidden" role="status" aria-live="polite"></p>
   </main>
   <script src="app.js"></script>
+  <script src="../../shared/portal-home.js"></script>
 </body>
 </html>

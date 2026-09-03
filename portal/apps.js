@@ -4,7 +4,8 @@
     { name: "シャボン玉", icon: "🫧", href: "apps/APP-002-bubble-touch/", className: "bubble" },
     { name: "くだものポン！", icon: "🍎", href: "apps/APP-003-fruit-pop/", className: "fruit" },
     { name: "音あそびピアノ", icon: "🎹", href: "apps/APP-004-sound-play-piano/", className: "piano" },
-    { name: "カラフル花火", icon: "🎆", href: "apps/APP-006-colorful-fireworks/", className: "fireworks" }
+    { name: "カラフル花火", icon: "🎆", href: "apps/APP-006-colorful-fireworks/", className: "fireworks" },
+    { name: "ぷにぷにジェリー", icon: "🪼", href: "apps/APP-010-liquid-play/", className: "jelly" }
   ];
   const grid = document.querySelector("#appGrid");
   const fragment = document.createDocumentFragment();
