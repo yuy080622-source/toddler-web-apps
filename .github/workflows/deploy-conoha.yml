@@ -1,0 +1,190 @@
+name: Deploy toddler apps to ConoHa WING
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conoha-toddler-apps-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to yulab-web.com/apps
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: conoha-toddler-apps-production
+      url: https://yulab-web.com/apps/
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      FTP_REMOTE_DIR: ${{ secrets.FTP_REMOTE_DIR }}
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+
+      - name: Validate deployment settings
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for name in FTP_SERVER FTP_USERNAME FTP_REMOTE_DIR; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::GitHub Secret ${name} is not configured."
+              exit 1
+            fi
+          done
+
+          if [ -z "${LFTP_PASSWORD:-}" ]; then
+            echo "::error::GitHub Secret FTP_PASSWORD is not configured."
+            exit 1
+          fi
+
+          if [ "$FTP_SERVER" != "www1161.conoha.ne.jp" ]; then
+            echo "::error::FTP_SERVER does not match the approved ConoHa server."
+            exit 1
+          fi
+
+          if [ "$FTP_USERNAME" != "apps@yulab-web.com" ]; then
+            echo "::error::FTP_USERNAME is not the apps-only FTP account."
+            exit 1
+          fi
+
+          if [ "$FTP_REMOTE_DIR" != "./" ]; then
+            echo "::error::FTP_REMOTE_DIR must be ./ because this FTP account is restricted to the apps directory."
+            exit 1
+          fi
+
+      - name: Build deployment directory
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          public_files=(
+            index.html
+            portal/apps.js
+            portal/style.css
+            shared/clarity.js
+            shared/ga4.js
+            shared/portal-home.css
+            shared/portal-home.js
+            apps/APP-002-bubble-touch/index.html
+            apps/APP-002-bubble-touch/css/style.css
+            apps/APP-002-bubble-touch/js/script.js
+            apps/APP-003-fruit-pop/index.html
+            apps/APP-003-fruit-pop/style.css
+            apps/APP-003-fruit-pop/script.js
+            apps/APP-003-fruit-pop/assets/sounds/apple.mp3
+            apps/APP-003-fruit-pop/assets/sounds/banana.mp3
+            apps/APP-003-fruit-pop/assets/sounds/grape.mp3
+            apps/APP-003-fruit-pop/assets/sounds/strawberry.mp3
+            apps/APP-004-sound-play-piano/index.html
+            apps/APP-004-sound-play-piano/style.css
+            apps/APP-004-sound-play-piano/script.js
+            apps/APP-006-colorful-fireworks/index.html
+            apps/APP-006-colorful-fireworks/css/style.css
+            apps/APP-006-colorful-fireworks/js/script.js
+            apps/APP-010-liquid-play/index.html
+            apps/APP-010-liquid-play/styles.css
+            apps/APP-010-liquid-play/app.js
+          )
+
+          for file in "${public_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "::error::Required public file is missing: $file"
+              exit 1
+            fi
+            install -D -m 0644 "$file" "deploy/$file"
+          done
+
+          echo "Files prepared for deployment:"
+          find deploy -type f -print | sort
+
+      - name: Install FTP client
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lftp
+
+      - name: Pre-upload safety check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if find deploy -type l -print -quit | grep -q .; then
+            echo "::error::The deployment directory must not contain symbolic links."
+            exit 1
+          fi
+
+          if find deploy -type f \( -iname '*.md' -o -iname '*.map' -o -iname '*.php' \) -print -quit | grep -q .; then
+            echo "::error::The deployment directory contains a documentation, source-map, or PHP file."
+            exit 1
+          fi
+
+          if find deploy -type d \( -name .git -o -name .github -o -name docs -o -name tests \) -print -quit | grep -q .; then
+            echo "::error::The deployment directory contains a repository or development directory."
+            exit 1
+          fi
+
+          if grep -RIl --exclude='*.mp3' '/toddler-web-apps/' deploy | grep -q .; then
+            echo "::error::A GitHub Pages-only /toddler-web-apps/ path remains in the public files."
+            exit 1
+          fi
+
+          lftp <<LFTP_COMMANDS
+          set cmd:fail-exit yes
+          set net:max-retries 2
+          set net:timeout 20
+          set ftp:ssl-allow yes
+          set ftp:ssl-force yes
+          set ftp:ssl-auth TLS
+          set ftp:ssl-protect-data yes
+          set ftp:ssl-protect-list yes
+          set ssl:verify-certificate yes
+          open --user "$FTP_USERNAME" --env-password "ftp://$FTP_SERVER:21"
+          cd "$FTP_REMOTE_DIR"
+          pwd > /tmp/conoha-remote-pwd.txt
+          cls -1a > /tmp/conoha-remote-root.txt
+          bye
+          LFTP_COMMANDS
+
+          echo "Connected FTP root:"
+          sed -E 's#(ftp://)[^/@]+@#\1***@#' /tmp/conoha-remote-pwd.txt
+
+          if grep -Eiq '(^|/)(wp-admin|wp-content|wp-includes)(/|$)|(^|/)[^/]*\.php/?$' /tmp/conoha-remote-root.txt; then
+            echo "::error::WordPress directories or PHP files are visible at the FTP target. Deployment was stopped before upload."
+            exit 1
+          fi
+
+          echo "Deployment package and restricted FTP root safety checks passed."
+
+      - name: Upload toddler apps
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          lftp <<LFTP_COMMANDS
+          set cmd:fail-exit yes
+          set net:max-retries 2
+          set net:timeout 20
+          set ftp:ssl-allow yes
+          set ftp:ssl-force yes
+          set ftp:ssl-auth TLS
+          set ftp:ssl-protect-data yes
+          set ftp:ssl-protect-list yes
+          set ssl:verify-certificate yes
+          open --user "$FTP_USERNAME" --env-password "ftp://$FTP_SERVER:21"
+          cd "$FTP_REMOTE_DIR"
+          mirror --reverse --verbose --only-newer --parallel=2 deploy/ ./
+          bye
+          LFTP_COMMANDS
+
+          echo "Deployment completed: https://yulab-web.com/apps/"

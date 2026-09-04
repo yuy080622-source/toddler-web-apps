@@ -1,5 +1,13 @@
 # PRJ-003 変更履歴
 
+## 2026-09-04 — ConoHa WING自動デプロイ追加
+
+- mainへのpushと`workflow_dispatch`を起点に、GitHub-hosted Ubuntu runnerからConoHa WINGへ自動配信するworkflowを追加
+- explicit FTPSのport 21、AUTH TLS、TLS強制、データ／一覧通信のTLS保護、証明書検証を設定
+- `apps@yulab-web.com`と`FTP_REMOTE_DIR=./`を固定条件として検証し、WordPressディレクトリまたはPHPファイルが接続ルートに見えた場合はupload前に中止
+- 共通ポータル、共通JS／CSS、正式公開済みAPP-002／003／004／006／010だけを`deploy/`へ明示的に集約し、リモート削除同期は不使用
+- 公開対象の相対パスを監査し、`/toddler-web-apps/`固定パスがないことを確認。アプリ本体、GA4、Clarityは変更なし
+
 ## 2026-09-04 — APP-010「ぷにぷにジェリー」正式公開
 
 - PMの主要iPhone実機確認PASSを受け、ユーザー向け名称から「（仮）」を除去

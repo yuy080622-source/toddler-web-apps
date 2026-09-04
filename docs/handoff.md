@@ -10,6 +10,16 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 
 共通ポータルと正式公開済みのAPP-002／003／004／006／010は、Google Analytics 4測定ID `G-M5FPMG34LE`も`shared/ga4.js`から共通利用する。GA4は標準ページ計測のみで、カスタムイベント、カスタムユーザーID、入力内容の送信は追加していない。APP-005／007／008は対象外。
 
+### 2026-09-04 ConoHa WING自動デプロイ
+
+- 公開先を`https://yulab-web.com/apps/`として、mainへのpushと手動実行に対応するGitHub Actionsを追加
+- `apps@yulab-web.com`専用FTPアカウントの接続ルート`./`へ、port 21のexplicit FTPS（AUTH TLS、制御・データTLS、証明書検証ON）で配信
+- Secret値、接続先サーバー、専用ユーザー名、接続ルートをupload前に検証し、FTPルートにWordPressディレクトリまたはPHPファイルが見えた場合は即時中止
+- `deploy/`には共通ポータル、共通JS／CSS、正式公開済みAPP-002／003／004／006／010の実行ファイルだけを明示的に集約
+- 未公開APP-005／007／008、`.git`、`.github`、`docs`、README、CHANGELOG、テスト等の開発・管理ファイルは配信対象外
+- リモート削除同期は使用せず、既存のGA4／Clarityコードを維持
+- 公開ファイルの実行時参照は相対パスで統一済み。GitHub Pages専用`/toddler-web-apps/`固定パスは存在せず、アプリ本体のUI・動作は変更なし
+
 ### 2026-08-30 GA4標準計測導入
 
 - 変更ファイル：`shared/ga4.js`、共通ポータルとAPP-002／003／004／006の各`index.html`、公開APPのREADME／CHANGELOG、共通仕様・設計・handoff・changelog

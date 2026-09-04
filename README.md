@@ -26,8 +26,9 @@ GitHub Repositoryをコード、仕様、設計、変更履歴、引き継ぎ情
 
 ## 公開URL
 
-- 共通ポータル：`https://yuy080622-source.github.io/toddler-web-apps/`
-- APP-004：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-004-sound-play-piano/`
+- 共通ポータル：`https://yulab-web.com/apps/`
+- APP-004：`https://yulab-web.com/apps/apps/APP-004-sound-play-piano/`
+- 旧GitHub Pages：`https://yuy080622-source.github.io/toddler-web-apps/`
 
 
 ## ローカル確認
