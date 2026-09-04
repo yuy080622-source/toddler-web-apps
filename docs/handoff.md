@@ -19,6 +19,8 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - 未公開APP-005／007／008、`.git`、`.github`、`docs`、README、CHANGELOG、テスト等の開発・管理ファイルは配信対象外
 - リモート削除同期は使用せず、既存のGA4／Clarityコードを維持
 - 公開ファイルの実行時参照は相対パスで統一済み。GitHub Pages専用`/toddler-web-apps/`固定パスは存在せず、アプリ本体のUI・動作は変更なし
+- 実装commit `44b90074001fc551a584add28a4f46d790cce15b`のActions run `33858493916` attempt 3は、設定・配信物・FTPルート安全確認とuploadを含む全Stepがsuccess
+- 公開26ファイルとcommitのSHA-256一致、ポータルと5アプリのHTTP 200、全カード遷移、共通ホームの`/apps/`解決、GA4／Clarity各1回、横スクロールなし、ブラウザコンソールエラー／警告なしを確認
 
 ### 2026-08-30 GA4標準計測導入
 
