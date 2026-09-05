@@ -4,6 +4,7 @@
 
 - APP固有CSSと後読み込みの共通CSSで`.portal-home-button`の詳細度が同じため、`position: absolute`が`relative`へ上書きされていた原因を修正
 - APP側を`#play-area > .portal-home-button`へ限定し、左上safe area内の絶対配置が共通CSSより確実に優先されるよう変更
+- APP-010のCSS参照へ版パラメータを付け、ConoHa再訪時にも旧CSSキャッシュではなく修正版を取得
 - 共通ホームの寸法、表示、約2秒長押し処理、APP側の入力除外、ジェリー本体の物理・描画・入力は変更なし
 
 ## 2026-09-04 — 正式公開基盤へ追加

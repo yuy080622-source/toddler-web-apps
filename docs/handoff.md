@@ -16,6 +16,7 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - 原因はAPP CSSの`.portal-home-button { position: absolute }`が、後読み込みかつ同じ詳細度の共通CSSにある`position: relative`で上書きされたこと
 - 390×844ではボタンがCanvas直後のY=856pxへ配置され、`#play-area`の`overflow: hidden`で見えなくなっていた
 - APP側セレクタを`#play-area > .portal-home-button`へ限定し、左上safe area内の絶対配置を確実に優先する最小修正を行った
+- 初回配信後も既存ブラウザで旧CSSが再利用されたため、APP-010 HTMLのCSS参照へ版パラメータを付けて修正版取得を保証する
 - 共通CSS／JS、ジェリーの物理・描画・入力、GA4／Clarity、ConoHa配信方式は変更しない
 
 ### 2026-09-04 ConoHa WING自動デプロイ

@@ -4,6 +4,7 @@
 
 - APP固有CSSと後読み込みの共通CSSでホームボタンの`position`指定が競合し、共通側の`relative`が勝ってCanvas直後の画面外へ配置されていた原因を特定
 - APP側の配置セレクタを`#play-area > .portal-home-button`へ限定し、左上safe area内の絶対配置を確実に優先
+- APP-010のCSS参照へ版パラメータを追加し、ConoHa再訪時の旧CSSキャッシュを回避
 - CSS／JSの公開取得とmain一致を確認し、共通ホーム処理、APP本体、GA4／Clarity、ConoHa配信方式は変更なし
 
 ## 2026-09-04 — ConoHa WING自動デプロイ追加

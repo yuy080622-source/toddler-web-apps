@@ -38,6 +38,7 @@ assert.equal((indexSource.match(/\.\.\/\.\.\/shared\/clarity\.js/g) || []).lengt
 assert.equal((indexSource.match(/\.\.\/\.\.\/shared\/portal-home\.js/g) || []).length, 1, "APP-010 loads shared portal-home behavior exactly once");
 assert.equal((indexSource.match(/data-portal-home/g) || []).length, 1, "APP-010 has one shared home button");
 assert.ok(indexSource.includes("<title>ぷにぷにジェリー</title>"), "public title omits the provisional suffix");
+assert.ok(indexSource.includes('href="styles.css?v=20260905-home"'), "APP-010 cache-busts the home-positioning CSS fix");
 assert.match(styleSource, /#play-area\s*>\s*\.portal-home-button\s*\{[^}]*position:\s*absolute;/s, "APP-specific home positioning outranks the later shared relative positioning");
 assert.ok(appSource.includes('closest?.("[data-portal-home]")'), "APP-010 defensively excludes home-button pointers from jelly input");
 assert.ok(!/gtag\(|clarity\(|dataLayer|deviceorientation.*(?:gtag|clarity)|(?:gtag|clarity).*deviceorientation/.test(appSource), "APP-010 sends no custom analytics or sensor values");
