@@ -30,6 +30,7 @@ const appRoot = path.join(__dirname, "..");
 const repositoryRoot = path.join(appRoot, "..", "..");
 const indexSource = fs.readFileSync(path.join(appRoot, "index.html"), "utf8");
 const appSource = fs.readFileSync(path.join(appRoot, "app.js"), "utf8");
+const styleSource = fs.readFileSync(path.join(appRoot, "styles.css"), "utf8");
 const portalAppsSource = fs.readFileSync(path.join(repositoryRoot, "portal", "apps.js"), "utf8");
 const portalStyleSource = fs.readFileSync(path.join(repositoryRoot, "portal", "style.css"), "utf8");
 assert.equal((indexSource.match(/\.\.\/\.\.\/shared\/ga4\.js/g) || []).length, 1, "APP-010 loads shared GA4 exactly once");
@@ -37,6 +38,7 @@ assert.equal((indexSource.match(/\.\.\/\.\.\/shared\/clarity\.js/g) || []).lengt
 assert.equal((indexSource.match(/\.\.\/\.\.\/shared\/portal-home\.js/g) || []).length, 1, "APP-010 loads shared portal-home behavior exactly once");
 assert.equal((indexSource.match(/data-portal-home/g) || []).length, 1, "APP-010 has one shared home button");
 assert.ok(indexSource.includes("<title>ぷにぷにジェリー</title>"), "public title omits the provisional suffix");
+assert.match(styleSource, /#play-area\s*>\s*\.portal-home-button\s*\{[^}]*position:\s*absolute;/s, "APP-specific home positioning outranks the later shared relative positioning");
 assert.ok(appSource.includes('closest?.("[data-portal-home]")'), "APP-010 defensively excludes home-button pointers from jelly input");
 assert.ok(!/gtag\(|clarity\(|dataLayer|deviceorientation.*(?:gtag|clarity)|(?:gtag|clarity).*deviceorientation/.test(appSource), "APP-010 sends no custom analytics or sensor values");
 assert.equal((portalAppsSource.match(/\{ name:/g) || []).length, 5, "portal lists five public apps");

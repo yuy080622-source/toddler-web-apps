@@ -1,6 +1,6 @@
 # PRJ-003 引き継ぎ
 
-更新日：2026-09-04
+更新日：2026-09-05
 
 ## 現在状態
 
@@ -9,6 +9,14 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 共通ポータルとAPP-002／003／004／006／010は、Microsoft Clarity Project ID `y7wygqymd5`を共通利用している。URLパス別の標準分析、セッション録画、ヒートマップのみを使用し、カスタムイベント、カスタムユーザーID、個人情報入力は追加していない。
 
 共通ポータルと正式公開済みのAPP-002／003／004／006／010は、Google Analytics 4測定ID `G-M5FPMG34LE`も`shared/ga4.js`から共通利用する。GA4は標準ページ計測のみで、カスタムイベント、カスタムユーザーID、入力内容の送信は追加していない。APP-005／007／008は対象外。
+
+### 2026-09-05 APP-010 ConoHa共通ホーム表示修正
+
+- ConoHa公開ファイルはmainと一致し、APP-010 HTML、APP CSS、共通ホームCSS／JSはいずれもHTTP 200だった
+- 原因はAPP CSSの`.portal-home-button { position: absolute }`が、後読み込みかつ同じ詳細度の共通CSSにある`position: relative`で上書きされたこと
+- 390×844ではボタンがCanvas直後のY=856pxへ配置され、`#play-area`の`overflow: hidden`で見えなくなっていた
+- APP側セレクタを`#play-area > .portal-home-button`へ限定し、左上safe area内の絶対配置を確実に優先する最小修正を行った
+- 共通CSS／JS、ジェリーの物理・描画・入力、GA4／Clarity、ConoHa配信方式は変更しない
 
 ### 2026-09-04 ConoHa WING自動デプロイ
 
