@@ -18,6 +18,8 @@ Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用
 - APP側セレクタを`#play-area > .portal-home-button`へ限定し、左上safe area内の絶対配置を確実に優先する最小修正を行った
 - 初回配信後も既存ブラウザで旧CSSが再利用されたため、APP-010 HTMLのCSS参照へ版パラメータを付けて修正版取得を保証する
 - 共通CSS／JS、ジェリーの物理・描画・入力、GA4／Clarity、ConoHa配信方式は変更しない
+- commit `b3c65462d9ca9bb06f0877e1d47a747a39391225`のConoHa Actions run `33967565773`はsuccess。公開版で390×844、844×390、1024×768のホーム表示、Canvas全面一致、不要スクロールなし、短押し非遷移、遷移先`https://yulab-web.com/apps/`、コンソールエラー／警告なしを確認
+- 現行ConoHa配信のAPP-010 URLはポータルリンクどおり`https://yulab-web.com/apps/apps/APP-010-liquid-play/`。依頼文記載の`https://yulab-web.com/apps/APP-010-liquid-play/`は404であり、公開階層の変更は今回の表示修正に含めない
 
 ### 2026-09-04 ConoHa WING自動デプロイ
 
