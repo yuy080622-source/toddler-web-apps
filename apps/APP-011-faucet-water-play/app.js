@@ -76,51 +76,63 @@
     else poolLevel = clamp(poolLevel - dt * 0.018, 0, 1);
   }
 
-  function waterSurfaceY() {
-    return height - (12 + poolLevel * Math.min(112, height * 0.16));
+  function poolGeometry() {
+    const minRadiusX = Math.min(68, width * 0.26);
+    const maxRadiusX = Math.min(width * 0.43, 300);
+    const radiusX = minRadiusX + (maxRadiusX - minRadiusX) * poolLevel;
+    const minRadiusY = Math.min(14, height * 0.045);
+    const maxRadiusY = Math.min(54, height * 0.08);
+    const radiusY = minRadiusY + (maxRadiusY - minRadiusY) * poolLevel;
+    const desiredCenterX = originX + (width - originX) * (0.10 + poolLevel * 0.18);
+    const centerX = clamp(desiredCenterX, radiusX + 12, width - radiusX - 12);
+    const centerY = height - radiusY - 12;
+    return {
+      centerX,
+      centerY,
+      radiusX,
+      radiusY,
+      surfaceY: centerY - radiusY + 2
+    };
   }
 
   function drawPool(now) {
     if (poolLevel <= 0.001) return;
-    const surfaceY = waterSurfaceY();
-    const poolWidth = Math.min(width * (0.38 + poolLevel * 0.76), width * 1.22);
-    const centerX = clamp(originX + (width - originX) * 0.18, poolWidth * 0.33, width - poolWidth * 0.33);
-    const wave = reducedMotion ? 0 : Math.sin(now * 0.0015) * 3 * poolLevel;
-    const gradient = context.createLinearGradient(0, surfaceY, 0, height);
+    const pool = poolGeometry();
+    const breathe = reducedMotion ? 0 : Math.sin(now * 0.0015) * 1.4 * poolLevel;
+    const gradient = context.createLinearGradient(0, pool.centerY - pool.radiusY, 0, pool.centerY + pool.radiusY);
     gradient.addColorStop(0, `rgba(91, 196, 224, ${0.34 + poolLevel * 0.18})`);
     gradient.addColorStop(1, `rgba(46, 160, 211, ${0.55 + poolLevel * 0.16})`);
     context.fillStyle = gradient;
     context.beginPath();
-    context.moveTo(centerX - poolWidth / 2, height + 4);
-    context.lineTo(centerX - poolWidth / 2, surfaceY + 7);
-    context.bezierCurveTo(
-      centerX - poolWidth * 0.25, surfaceY - wave,
-      centerX - poolWidth * 0.08, surfaceY + wave,
-      centerX, surfaceY
-    );
-    context.bezierCurveTo(
-      centerX + poolWidth * 0.13, surfaceY - wave,
-      centerX + poolWidth * 0.30, surfaceY + wave,
-      centerX + poolWidth / 2, surfaceY + 5
-    );
-    context.lineTo(centerX + poolWidth / 2, height + 4);
-    context.closePath();
+    context.ellipse(pool.centerX, pool.centerY, pool.radiusX + breathe, pool.radiusY, 0, 0, Math.PI * 2);
     context.fill();
 
-    context.globalAlpha = 0.36;
+    context.globalAlpha = 0.28;
+    context.strokeStyle = "#4cb6d8";
+    context.lineWidth = 2;
+    context.stroke();
+
+    context.globalAlpha = 0.42;
     context.strokeStyle = "#d9f8ff";
     context.lineWidth = 3;
     context.lineCap = "round";
     context.beginPath();
-    context.moveTo(centerX - poolWidth * 0.24, surfaceY + 3);
-    context.quadraticCurveTo(centerX - poolWidth * 0.10, surfaceY - 3, centerX + poolWidth * 0.06, surfaceY + 2);
+    context.ellipse(
+      pool.centerX - pool.radiusX * 0.12,
+      pool.centerY - pool.radiusY * 0.10,
+      pool.radiusX * 0.62,
+      pool.radiusY * 0.55,
+      -0.04,
+      Math.PI * 1.08,
+      Math.PI * 1.78
+    );
     context.stroke();
     context.globalAlpha = 1;
   }
 
   function drawStream(now) {
     if (flowStrength <= 0.005) return;
-    const surfaceY = waterSurfaceY();
+    const surfaceY = poolGeometry().surfaceY;
     const streamBottom = Math.max(originY + 4, surfaceY + 3);
     const wobble = reducedMotion ? 0 : Math.sin(now * 0.006) * 3.2 * flowStrength;
     const streamWidth = (18 + Math.min(width, height) * 0.012) * flowStrength;
@@ -228,7 +240,16 @@
       width,
       height,
       originX,
-      originY
+      originY,
+      poolBounds: (() => {
+        const pool = poolGeometry();
+        return {
+          left: pool.centerX - pool.radiusX,
+          right: pool.centerX + pool.radiusX,
+          top: pool.centerY - pool.radiusY,
+          bottom: pool.centerY + pool.radiusY
+        };
+      })()
     })
   });
 })();

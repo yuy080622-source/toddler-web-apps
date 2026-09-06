@@ -142,7 +142,10 @@ assert.ok(state.flowStrength > 0.99, "flow reaches a clear stable amount");
 assert.ok(state.poolLevel > 0.08, "pool grows during a hold");
 assert.ok(env.drawCalls.some(([name]) => name === "bezierCurveTo"), "water uses soft bezier shapes");
 assert.ok(env.drawCalls.some(([name]) => name === "createLinearGradient"), "water has transparent gradient depth");
+assert.ok(env.drawCalls.filter(([name]) => name === "ellipse").length >= 2, "pool uses a complete ellipse and inner highlight");
 assert.ok(env.drawCalls.some(([name]) => name === "arc"), "normal motion includes restrained splashes");
+assert.ok(state.poolBounds.left >= 0 && state.poolBounds.right <= state.width, "portrait pool stays clear of horizontal edges");
+assert.ok(state.poolBounds.top >= 0 && state.poolBounds.bottom < state.height, "portrait pool is a complete visible ellipse");
 
 env.playArea.dispatch("pointerdown", { pointerId: 2 });
 env.playArea.dispatch("pointerup", { pointerId: 1 });
@@ -179,6 +182,8 @@ assert.equal(env.pendingFrames(), 1, "BFCache return does not duplicate the loop
 
 env.setViewport(844, 390);
 assert.deepEqual([debug.snapshot().width, debug.snapshot().height], [844, 390], "landscape resize updates the Canvas state");
+assert.ok(debug.snapshot().poolBounds.left >= 0 && debug.snapshot().poolBounds.right <= 844, "landscape pool stays clear of horizontal edges");
+assert.ok(debug.snapshot().poolBounds.bottom < 390, "landscape pool remains fully visible above the bottom edge");
 assert.equal(env.pendingFrames(), 1, "resize does not duplicate the loop");
 
 const reducedEnv = createEnvironment(true);

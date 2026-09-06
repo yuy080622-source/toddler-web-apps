@@ -51,90 +51,103 @@ body {
 .faucet {
   position: absolute;
   z-index: 2;
-  top: max(22px, env(safe-area-inset-top));
+  top: max(18px, env(safe-area-inset-top));
   left: max(0px, env(safe-area-inset-left));
-  width: 176px;
-  height: 156px;
+  width: 184px;
+  height: 164px;
   pointer-events: none;
-  filter: drop-shadow(0 7px 8px rgba(73, 111, 105, .16));
+  filter: drop-shadow(0 7px 7px rgba(63, 111, 105, .15));
 }
 
 .faucet span { position: absolute; display: block; }
 
 .faucet__wall-pipe {
-  left: -12px;
-  top: 58px;
-  width: 66px;
-  height: 54px;
-  border: 5px solid #97bdb9;
-  border-radius: 0 18px 18px 0;
-  background: linear-gradient(180deg, #e3f2ee, #b9d6d1);
-  box-shadow: inset 0 5px 0 rgba(255, 255, 255, .58);
+  z-index: 0;
+  left: -15px;
+  top: 71px;
+  width: 68px;
+  height: 50px;
+  border: 5px solid #78aaa3;
+  border-radius: 0 24px 24px 0;
+  background: #cce5df;
+  box-shadow: inset 0 7px 0 rgba(255, 255, 255, .48);
 }
 
 .faucet__body {
-  left: 36px;
-  top: 55px;
-  width: 60px;
-  height: 61px;
-  border: 5px solid #83aaa6;
-  border-radius: 23px;
-  background: linear-gradient(145deg, #eaf6f3, #a8cbc6);
-  box-shadow: inset 7px 7px 0 rgba(255, 255, 255, .48);
+  z-index: 2;
+  left: 32px;
+  top: 59px;
+  width: 76px;
+  height: 76px;
+  border: 6px solid #6f9f99;
+  border-radius: 31px;
+  background: linear-gradient(145deg, #eef8f5 4%, #b8d9d2 76%);
+  box-shadow:
+    inset 8px 8px 0 rgba(255, 255, 255, .48),
+    inset -5px -5px 0 rgba(85, 145, 136, .08);
 }
 
 .faucet__neck {
-  left: 73px;
-  top: 63px;
-  width: 56px;
-  height: 45px;
-  border: solid #83aaa6;
-  border-width: 5px 5px 0 0;
-  border-radius: 0 24px 0 0;
-  background: linear-gradient(180deg, #dbede9, #a9cbc6);
+  z-index: 1;
+  left: 83px;
+  top: 72px;
+  width: 65px;
+  height: 47px;
+  border: 6px solid #6f9f99;
+  border-left: 0;
+  border-radius: 0 25px 25px 0;
+  background: linear-gradient(180deg, #e8f5f1, #b2d4cd);
+  box-shadow: inset 0 7px 0 rgba(255, 255, 255, .38);
 }
 
 .faucet__spout {
-  left: 106px;
-  top: 86px;
-  width: 45px;
-  height: 33px;
-  border: solid #83aaa6;
-  border-width: 0 5px 5px;
-  border-radius: 0 0 13px 13px;
-  background: linear-gradient(90deg, #b5d4cf, #e4f2ef 64%, #a7c8c3);
+  z-index: 2;
+  left: 113px;
+  top: 91px;
+  width: 41px;
+  height: 48px;
+  border: 6px solid #6f9f99;
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
+  background: linear-gradient(90deg, #afd2cb, #edf8f5 62%, #a3c9c1);
+  box-shadow: inset 6px 0 0 rgba(255, 255, 255, .28);
 }
 
 .faucet__tip {
-  left: 117px;
-  top: 112px;
-  width: 36px;
-  height: 17px;
-  border: 4px solid #789f9b;
-  border-radius: 6px 6px 12px 12px;
-  background: #c3ddd8;
-  box-shadow: inset 0 4px 0 rgba(255, 255, 255, .42);
+  z-index: 3;
+  left: 112px;
+  top: 129px;
+  width: 43px;
+  height: 20px;
+  border: 5px solid #638f89;
+  border-radius: 8px 8px 15px 15px;
+  background: #c7e2dc;
+  box-shadow: inset 0 5px 0 rgba(255, 255, 255, .44);
 }
 
 .faucet__handle {
-  left: 51px;
-  top: 30px;
-  width: 31px;
-  height: 33px;
-  border: 5px solid #83aaa6;
-  border-radius: 10px;
-  background: #c6dfda;
+  z-index: 3;
+  left: 58px;
+  top: 35px;
+  width: 25px;
+  height: 31px;
+  border: 5px solid #6f9f99;
+  border-radius: 11px 11px 7px 7px;
+  background: #c5e0da;
 }
 
 .faucet__handle-cap {
-  left: 25px;
-  top: 19px;
-  width: 83px;
-  height: 26px;
-  border: 5px solid #7d9f9c;
+  z-index: 4;
+  left: 23px;
+  top: 16px;
+  width: 95px;
+  height: 31px;
+  border: 5px solid #638f89;
   border-radius: 999px;
-  background: linear-gradient(180deg, #f0a7a2, #df7e7b);
-  box-shadow: inset 0 5px 0 rgba(255, 255, 255, .35);
+  background: linear-gradient(180deg, #f6aaa4, #e98582);
+  box-shadow:
+    inset 0 6px 0 rgba(255, 255, 255, .38),
+    0 3px 0 rgba(76, 126, 119, .08);
 }
 
 .press-hint {
