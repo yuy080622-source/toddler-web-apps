@@ -20,7 +20,9 @@
 
 ## 公開範囲
 
-MVP試作段階のため、共通ポータル、ConoHa公開allowlist、GA4、Clarityへは追加していません。GitHub Pages上ではリポジトリ内の試作URLから直接確認できます。
+MVP試作段階のため、共通ポータル、ConoHa公開allowlist、GA4、Clarityへは追加していません。GitHub Pages上では次の試作URLから直接確認できます。
+
+`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-011-faucet-water-play/`
 
 ## ローカル確認
 

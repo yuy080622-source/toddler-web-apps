@@ -22,7 +22,10 @@ APP-011「じゃぐちみずあそび」はMVP試作を`apps/APP-011-faucet-wate
 - reduced-motionでは流れの揺れ、水しぶき、押下ヒントの反復動作を抑え、出水と水たまりは維持
 - Canvas 1枚、単一RAF、固定DOM。safe area、`100dvh`、縦横回転、複数指、連打、中断・復帰、BFCacheへ対応
 - 音、スコア、設定、外部通信、ポータル、共通ホーム、ConoHa公開allowlist、GA4、Clarityは未実装
-- 自動回帰とローカル3画面サイズはPASS。残課題はiPhone Safari実機でのsafe area、長押し継続、複数指、回転、中断復帰、刺激量、発熱の確認
+- 自動回帰とローカル3画面サイズはPASS。実装commit `d4125f8698dc013d832391ce8b124c5ce87fdce5`のPages run `34001107755`もsuccess
+- 公開HTML／CSS／JSとmainのSHA-256一致を確認。公開版390×844／844×390／1024×768でCanvas全面、不要スクロールなし、押下時の水流と水たまり、分析タグなし、コンソールエラー／警告なしを確認
+- 試作直接URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-011-faucet-water-play/`
+- 残課題はiPhone Safari実機でのsafe area、長押し継続、複数指、回転、中断復帰、刺激量、発熱の確認
 
 ### 2026-09-05 APP-010 ConoHa共通ホーム表示修正
 

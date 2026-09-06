@@ -11,3 +11,4 @@
 - `100dvh`、safe area、縦横回転、複数指、中断・復帰、BFCacheへ対応
 - Canvas 1枚、単一RAF、固定DOMで長時間利用時の増殖を防止
 - 音、スコア、設定、外部通信、ポータル登録、ConoHa公開、GA4、Clarityは未実装
+- 実装commit `d4125f8698dc013d832391ce8b124c5ce87fdce5`のPages run `34001107755`はsuccess。公開HTML／CSS／JSとmainのSHA-256一致、3画面サイズ、押下反応、不要スクロールなし、コンソールエラー／警告なしを確認
