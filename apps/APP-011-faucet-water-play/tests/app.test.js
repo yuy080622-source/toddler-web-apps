@@ -28,6 +28,7 @@ const styleSource = fs.readFileSync(path.join(appRoot, "styles.css"), "utf8");
 const appSource = fs.readFileSync(path.join(appRoot, "app.js"), "utf8");
 
 assert.match(indexSource, /<title>じゃぐちみずあそび<\/title>/, "title identifies APP-011");
+assert.ok(indexSource.includes('href="styles.css?v=20260906-curve"'), "faucet curve CSS update is cache-busted");
 assert.equal((indexSource.match(/<canvas/g) || []).length, 1, "one Canvas is used");
 assert.ok(!/shared\/(?:ga4|clarity|portal-home)/.test(indexSource), "MVP does not add analytics or portal behavior");
 assert.match(styleSource, /height:\s*100dvh/, "dynamic viewport height is supported");
