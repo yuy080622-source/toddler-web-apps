@@ -33,6 +33,7 @@ assert.ok(!/shared\/(?:ga4|clarity|portal-home)/.test(indexSource), "MVP does no
 assert.match(styleSource, /height:\s*100dvh/, "dynamic viewport height is supported");
 assert.match(styleSource, /env\(safe-area-inset-top\)/, "faucet respects the top safe area");
 assert.match(styleSource, /prefers-reduced-motion:\s*reduce/, "reduced-motion styles exist");
+assert.match(styleSource, /\.faucet__spout\s*\{[^}]*border-left:\s*0;/s, "spout removes the inner overlap seam at the curved neck");
 assert.ok(!/setInterval|new Audio|fetch\(|XMLHttpRequest/.test(appSource), "no interval, audio, or external request is introduced");
 assert.match(appSource, /visibilitychange/, "visibility changes are handled");
 assert.match(appSource, /pagehide/, "pagehide is handled");

@@ -95,7 +95,7 @@ body {
   height: 47px;
   border: 6px solid #6f9f99;
   border-left: 0;
-  border-radius: 0 25px 25px 0;
+  border-radius: 0 25px 20px 0;
   background: linear-gradient(180deg, #e8f5f1, #b2d4cd);
   box-shadow: inset 0 7px 0 rgba(255, 255, 255, .38);
 }
@@ -104,18 +104,19 @@ body {
   z-index: 2;
   left: 113px;
   top: 91px;
-  width: 41px;
+  width: 35px;
   height: 48px;
   border: 6px solid #6f9f99;
   border-top: 0;
-  border-radius: 0 0 18px 18px;
+  border-left: 0;
+  border-radius: 0 0 15px 8px;
   background: linear-gradient(90deg, #afd2cb, #edf8f5 62%, #a3c9c1);
-  box-shadow: inset 6px 0 0 rgba(255, 255, 255, .28);
+  box-shadow: inset 5px 0 0 rgba(255, 255, 255, .26);
 }
 
 .faucet__tip {
   z-index: 3;
-  left: 112px;
+  left: 109px;
   top: 129px;
   width: 43px;
   height: 20px;
