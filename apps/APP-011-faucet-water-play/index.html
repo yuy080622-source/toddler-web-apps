@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4fbf7">
+  <meta name="description" content="画面を押している間、蛇口から流れる水と水たまりを楽しむ幼児向けWebアプリです。">
+  <title>じゃぐちみずあそび</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="play-area" aria-label="画面を押している間、蛇口から水が流れる遊び">
+    <canvas id="water-canvas" aria-hidden="true"></canvas>
+    <div class="faucet" aria-hidden="true">
+      <span class="faucet__wall-pipe"></span>
+      <span class="faucet__body"></span>
+      <span class="faucet__neck"></span>
+      <span class="faucet__spout"></span>
+      <span class="faucet__tip" id="spout-tip"></span>
+      <span class="faucet__handle"></span>
+      <span class="faucet__handle-cap"></span>
+    </div>
+    <div class="press-hint" aria-hidden="true"><span></span><span></span></div>
+    <p id="status" class="visually-hidden" role="status" aria-live="polite">画面のどこでも押して遊べます</p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

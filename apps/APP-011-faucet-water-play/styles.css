@@ -1,0 +1,189 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Hiragino Sans", sans-serif;
+  background: #f4fbf7;
+  touch-action: none;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #f4fbf7;
+}
+
+#play-area {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  touch-action: none;
+  cursor: pointer;
+  background:
+    radial-gradient(circle at 76% 17%, rgba(255, 255, 255, .94) 0 9%, transparent 29%),
+    radial-gradient(circle at 18% 70%, rgba(211, 241, 231, .34), transparent 34%),
+    linear-gradient(160deg, #fbfefa 0%, #ecf8f2 55%, #e1f3ee 100%);
+}
+
+#water-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.faucet {
+  position: absolute;
+  z-index: 2;
+  top: max(22px, env(safe-area-inset-top));
+  left: max(0px, env(safe-area-inset-left));
+  width: 176px;
+  height: 156px;
+  pointer-events: none;
+  filter: drop-shadow(0 7px 8px rgba(73, 111, 105, .16));
+}
+
+.faucet span { position: absolute; display: block; }
+
+.faucet__wall-pipe {
+  left: -12px;
+  top: 58px;
+  width: 66px;
+  height: 54px;
+  border: 5px solid #97bdb9;
+  border-radius: 0 18px 18px 0;
+  background: linear-gradient(180deg, #e3f2ee, #b9d6d1);
+  box-shadow: inset 0 5px 0 rgba(255, 255, 255, .58);
+}
+
+.faucet__body {
+  left: 36px;
+  top: 55px;
+  width: 60px;
+  height: 61px;
+  border: 5px solid #83aaa6;
+  border-radius: 23px;
+  background: linear-gradient(145deg, #eaf6f3, #a8cbc6);
+  box-shadow: inset 7px 7px 0 rgba(255, 255, 255, .48);
+}
+
+.faucet__neck {
+  left: 73px;
+  top: 63px;
+  width: 56px;
+  height: 45px;
+  border: solid #83aaa6;
+  border-width: 5px 5px 0 0;
+  border-radius: 0 24px 0 0;
+  background: linear-gradient(180deg, #dbede9, #a9cbc6);
+}
+
+.faucet__spout {
+  left: 106px;
+  top: 86px;
+  width: 45px;
+  height: 33px;
+  border: solid #83aaa6;
+  border-width: 0 5px 5px;
+  border-radius: 0 0 13px 13px;
+  background: linear-gradient(90deg, #b5d4cf, #e4f2ef 64%, #a7c8c3);
+}
+
+.faucet__tip {
+  left: 117px;
+  top: 112px;
+  width: 36px;
+  height: 17px;
+  border: 4px solid #789f9b;
+  border-radius: 6px 6px 12px 12px;
+  background: #c3ddd8;
+  box-shadow: inset 0 4px 0 rgba(255, 255, 255, .42);
+}
+
+.faucet__handle {
+  left: 51px;
+  top: 30px;
+  width: 31px;
+  height: 33px;
+  border: 5px solid #83aaa6;
+  border-radius: 10px;
+  background: #c6dfda;
+}
+
+.faucet__handle-cap {
+  left: 25px;
+  top: 19px;
+  width: 83px;
+  height: 26px;
+  border: 5px solid #7d9f9c;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f0a7a2, #df7e7b);
+  box-shadow: inset 0 5px 0 rgba(255, 255, 255, .35);
+}
+
+.press-hint {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 48%;
+  width: 82px;
+  height: 82px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity .35s ease;
+}
+
+.press-hint span {
+  position: absolute;
+  inset: 12px;
+  border: 3px solid rgba(90, 172, 183, .24);
+  border-radius: 50%;
+  animation: hint-pulse 2.8s ease-out infinite;
+}
+
+.press-hint span:last-child { animation-delay: 1.4s; }
+#play-area.is-flowing .press-hint { opacity: 0; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes hint-pulse {
+  0% { opacity: 0; transform: scale(.72); }
+  22% { opacity: 1; }
+  76%, 100% { opacity: 0; transform: scale(1.34); }
+}
+
+@media (max-width: 430px) {
+  .faucet { transform: scale(.9); transform-origin: top left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press-hint span { animation: none; opacity: .7; }
+  .press-hint span:last-child { display: none; }
+  .press-hint { transition: none; }
+}

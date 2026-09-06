@@ -1,0 +1,234 @@
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("water-canvas");
+  const playArea = document.getElementById("play-area");
+  const spoutTip = document.getElementById("spout-tip");
+  const status = document.getElementById("status");
+  const context = canvas.getContext("2d");
+  const reduceQuery = matchMedia("(prefers-reduced-motion: reduce)");
+  const pointers = new Set();
+
+  let width = 1;
+  let height = 1;
+  let dpr = 1;
+  let originX = 136;
+  let originY = 148;
+  let poolLevel = 0;
+  let flowStrength = 0;
+  let reducedMotion = reduceQuery.matches;
+  let running = false;
+  let frameId = 0;
+  let lastTime = 0;
+
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  function updateOrigin() {
+    const rect = spoutTip.getBoundingClientRect();
+    originX = rect.left + rect.width / 2;
+    originY = rect.bottom - 2;
+  }
+
+  function resize() {
+    const rect = playArea.getBoundingClientRect();
+    width = Math.max(1, rect.width);
+    height = Math.max(1, rect.height);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    updateOrigin();
+    draw(performance.now());
+  }
+
+  function setFlowing(flowing) {
+    playArea.classList.toggle("is-flowing", flowing);
+    status.textContent = flowing ? "お水が出ています" : "お水が止まりました";
+  }
+
+  function onPointerDown(event) {
+    event.preventDefault();
+    pointers.add(event.pointerId);
+    try { playArea.setPointerCapture(event.pointerId); } catch (_) { /* capture is optional */ }
+    if (pointers.size === 1) setFlowing(true);
+  }
+
+  function endPointer(event) {
+    const hadPointers = pointers.size > 0;
+    pointers.delete(event.pointerId);
+    if (hadPointers && pointers.size === 0) setFlowing(false);
+  }
+
+  function clearInput() {
+    if (pointers.size) setFlowing(false);
+    pointers.clear();
+    flowStrength = 0;
+  }
+
+  function update(dt) {
+    const flowing = pointers.size > 0;
+    const rise = reducedMotion ? 7 : 10;
+    const fall = reducedMotion ? 9 : 12;
+    flowStrength = clamp(flowStrength + (flowing ? rise : -fall) * dt, 0, 1);
+    if (flowing) poolLevel = clamp(poolLevel + dt * 0.085, 0, 1);
+    else poolLevel = clamp(poolLevel - dt * 0.018, 0, 1);
+  }
+
+  function waterSurfaceY() {
+    return height - (12 + poolLevel * Math.min(112, height * 0.16));
+  }
+
+  function drawPool(now) {
+    if (poolLevel <= 0.001) return;
+    const surfaceY = waterSurfaceY();
+    const poolWidth = Math.min(width * (0.38 + poolLevel * 0.76), width * 1.22);
+    const centerX = clamp(originX + (width - originX) * 0.18, poolWidth * 0.33, width - poolWidth * 0.33);
+    const wave = reducedMotion ? 0 : Math.sin(now * 0.0015) * 3 * poolLevel;
+    const gradient = context.createLinearGradient(0, surfaceY, 0, height);
+    gradient.addColorStop(0, `rgba(91, 196, 224, ${0.34 + poolLevel * 0.18})`);
+    gradient.addColorStop(1, `rgba(46, 160, 211, ${0.55 + poolLevel * 0.16})`);
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.moveTo(centerX - poolWidth / 2, height + 4);
+    context.lineTo(centerX - poolWidth / 2, surfaceY + 7);
+    context.bezierCurveTo(
+      centerX - poolWidth * 0.25, surfaceY - wave,
+      centerX - poolWidth * 0.08, surfaceY + wave,
+      centerX, surfaceY
+    );
+    context.bezierCurveTo(
+      centerX + poolWidth * 0.13, surfaceY - wave,
+      centerX + poolWidth * 0.30, surfaceY + wave,
+      centerX + poolWidth / 2, surfaceY + 5
+    );
+    context.lineTo(centerX + poolWidth / 2, height + 4);
+    context.closePath();
+    context.fill();
+
+    context.globalAlpha = 0.36;
+    context.strokeStyle = "#d9f8ff";
+    context.lineWidth = 3;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(centerX - poolWidth * 0.24, surfaceY + 3);
+    context.quadraticCurveTo(centerX - poolWidth * 0.10, surfaceY - 3, centerX + poolWidth * 0.06, surfaceY + 2);
+    context.stroke();
+    context.globalAlpha = 1;
+  }
+
+  function drawStream(now) {
+    if (flowStrength <= 0.005) return;
+    const surfaceY = waterSurfaceY();
+    const streamBottom = Math.max(originY + 4, surfaceY + 3);
+    const wobble = reducedMotion ? 0 : Math.sin(now * 0.006) * 3.2 * flowStrength;
+    const streamWidth = (18 + Math.min(width, height) * 0.012) * flowStrength;
+    const gradient = context.createLinearGradient(originX - streamWidth, 0, originX + streamWidth, 0);
+    gradient.addColorStop(0, "rgba(101, 207, 236, .62)");
+    gradient.addColorStop(0.46, "rgba(181, 240, 250, .90)");
+    gradient.addColorStop(1, "rgba(47, 168, 216, .72)");
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.moveTo(originX - streamWidth * 0.48, originY);
+    context.bezierCurveTo(
+      originX - streamWidth * 0.60 + wobble, originY + (streamBottom - originY) * 0.34,
+      originX - streamWidth * 0.45 - wobble, originY + (streamBottom - originY) * 0.70,
+      originX - streamWidth * 0.34, streamBottom
+    );
+    context.lineTo(originX + streamWidth * 0.34, streamBottom);
+    context.bezierCurveTo(
+      originX + streamWidth * 0.42 - wobble, originY + (streamBottom - originY) * 0.70,
+      originX + streamWidth * 0.60 + wobble, originY + (streamBottom - originY) * 0.34,
+      originX + streamWidth * 0.48, originY
+    );
+    context.closePath();
+    context.fill();
+
+    context.globalAlpha = reducedMotion ? 0.26 : 0.42;
+    context.strokeStyle = "#f4feff";
+    context.lineWidth = Math.max(2, streamWidth * 0.14);
+    context.beginPath();
+    context.moveTo(originX - streamWidth * 0.13, originY + 8);
+    context.bezierCurveTo(originX + wobble * 0.4, originY + 74, originX - wobble * 0.3, streamBottom - 65, originX - streamWidth * 0.05, streamBottom - 10);
+    context.stroke();
+    context.globalAlpha = 1;
+
+    if (!reducedMotion && flowStrength > 0.45) {
+      for (let index = 0; index < 3; index += 1) {
+        const phase = (now * 0.0022 + index * 2.1) % (Math.PI * 2);
+        context.globalAlpha = 0.2 + index * 0.07;
+        context.fillStyle = "#72d1eb";
+        context.beginPath();
+        context.arc(originX + Math.sin(phase) * (16 + index * 7), surfaceY - 5 - Math.abs(Math.cos(phase)) * 11, 2.5 + index * 0.7, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.globalAlpha = 1;
+    }
+  }
+
+  function draw(now = performance.now()) {
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.clearRect(0, 0, width, height);
+    drawPool(now);
+    drawStream(now);
+  }
+
+  function frame(now) {
+    if (!running) return;
+    const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.034) : 1 / 60;
+    lastTime = now;
+    update(dt);
+    draw(now);
+    frameId = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    if (running || document.hidden) return;
+    running = true;
+    lastTime = 0;
+    frameId = requestAnimationFrame(frame);
+  }
+
+  function stop() {
+    running = false;
+    if (frameId) cancelAnimationFrame(frameId);
+    frameId = 0;
+    lastTime = 0;
+    clearInput();
+  }
+
+  playArea.addEventListener("pointerdown", onPointerDown);
+  playArea.addEventListener("pointerup", endPointer);
+  playArea.addEventListener("pointercancel", endPointer);
+  playArea.addEventListener("lostpointercapture", endPointer);
+  playArea.addEventListener("contextmenu", (event) => event.preventDefault());
+  window.addEventListener("resize", resize);
+  window.addEventListener("orientationchange", resize);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stop();
+    else { resize(); start(); }
+  });
+  window.addEventListener("pagehide", stop);
+  window.addEventListener("pageshow", () => { resize(); start(); });
+  reduceQuery.addEventListener("change", (event) => { reducedMotion = event.matches; });
+
+  resize();
+  start();
+
+  window.__FAUCET_WATER_DEBUG__ = Object.freeze({
+    snapshot: () => ({
+      pointerCount: pointers.size,
+      flowing: pointers.size > 0,
+      flowStrength,
+      poolLevel,
+      reducedMotion,
+      running,
+      framePending: frameId ? 1 : 0,
+      width,
+      height,
+      originX,
+      originY
+    })
+  });
+})();
