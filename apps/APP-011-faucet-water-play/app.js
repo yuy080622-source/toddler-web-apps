@@ -16,6 +16,7 @@
   let originY = 148;
   let poolLevel = 0;
   let flowStrength = 0;
+  let hasInteracted = false;
   let reducedMotion = reduceQuery.matches;
   let running = false;
   let frameId = 0;
@@ -50,6 +51,10 @@
 
   function onPointerDown(event) {
     event.preventDefault();
+    if (!hasInteracted) {
+      hasInteracted = true;
+      playArea.classList.toggle("has-interacted", true);
+    }
     pointers.add(event.pointerId);
     try { playArea.setPointerCapture(event.pointerId); } catch (_) { /* capture is optional */ }
     if (pointers.size === 1) setFlowing(true);
@@ -72,8 +77,8 @@
     const rise = reducedMotion ? 7 : 10;
     const fall = reducedMotion ? 9 : 12;
     flowStrength = clamp(flowStrength + (flowing ? rise : -fall) * dt, 0, 1);
-    if (flowing) poolLevel = clamp(poolLevel + dt * 0.085, 0, 1);
-    else poolLevel = clamp(poolLevel - dt * 0.018, 0, 1);
+    if (flowing) poolLevel = clamp(poolLevel + dt * 0.2125, 0, 1);
+    else poolLevel = clamp(poolLevel - dt * 0.036, 0, 1);
   }
 
   function poolGeometry() {
@@ -179,11 +184,37 @@
     }
   }
 
+  function drawLandingRipples(now) {
+    if (reducedMotion || !pointers.size || flowStrength < 0.18 || poolLevel < 0.005) return;
+    const pool = poolGeometry();
+    const impactX = clamp(originX, pool.centerX - pool.radiusX * 0.76, pool.centerX + pool.radiusX * 0.76);
+    const phase = (now % 1600) / 1600;
+    context.strokeStyle = "#d9f8ff";
+    context.lineWidth = 1.7;
+    for (let index = 0; index < 2; index += 1) {
+      const ripplePhase = (phase + index * 0.5) % 1;
+      context.globalAlpha = flowStrength * (1 - ripplePhase) * (index ? 0.13 : 0.18);
+      context.beginPath();
+      context.ellipse(
+        impactX,
+        pool.surfaceY + 3,
+        11 + ripplePhase * 12,
+        3.5 + ripplePhase * 2.4,
+        0,
+        0,
+        Math.PI * 2
+      );
+      context.stroke();
+    }
+    context.globalAlpha = 1;
+  }
+
   function draw(now = performance.now()) {
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.clearRect(0, 0, width, height);
     drawPool(now);
     drawStream(now);
+    drawLandingRipples(now);
   }
 
   function frame(now) {
@@ -232,6 +263,7 @@
     snapshot: () => ({
       pointerCount: pointers.size,
       flowing: pointers.size > 0,
+      hasInteracted,
       flowStrength,
       poolLevel,
       reducedMotion,
