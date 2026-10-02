@@ -15,3 +15,6 @@
 - GitHub Pages試作確認までを対象とし、正式公開・PM操作感承認は実機確認後に判断
 - Node540ドラッグ回帰、既存APP-010／011回帰、全18 JS構文、指定3サイズの操作・表示、実3指タッチ、実BFCache、reduced-motion、既存ポータル＋6アプリのスモーク回帰をPASS
 - 最終コードの実時間181.1秒／447ドラッグでDOM34固定、タイマー最大1本、外部通信なし、console error／warningなしを確認
+- 実装commit `3663218d1bdcef35a6f7d217d1e97234c5bfd465`のPages run `37043553611`はbuild／deployともsuccess。公開HTML／CSS／JSと指定4文書のHTTP 200、SHA-256一致を確認
+- HTTPS取得したPages版をローカル配信し、3サイズ・主要操作・実タッチ・実BFCache・reduced-motionを回帰PASS。公開URLへのChromium直接接続は環境CA未信頼のため未実施。信頼ストアへのCA追加は自動承認審査が拒否し、信頼設定は変更なし
+- Git CLI push認証不可のため、同一ツリーをGitHub APIでmainへfast-forward反映し、ローカルmain／origin/mainを同期

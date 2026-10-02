@@ -67,5 +67,7 @@ NODE_PATH=/tmp/shape-match-tools/node_modules APP013_LONG_SECONDS=180 \
 - Chromiumの実3指タッチ、同一ピースの所有権、pointercancel、回転、visibilitychange相当、実BFCache（`pageshow.persisted=true`）、reduced-motion、キーボード／ARIA：PASS。
 - 最終コードの実時間181.1秒／149ラウンド／447ドラッグ：PASS。DOM34固定、タイマー最大1本・待機時0本、外部通信なし、console error／warningなし。
 - 全18 JavaScript構文と、既存ポータル＋APP-002／003／004／006／010／011の3サイズスモーク回帰：PASS。既存分析通信は検証中だけローカルでスタブ化。
-- Pagesの最終結果はデプロイ確認後に追記します。
+- Pages：実装commit `3663218d1bdcef35a6f7d217d1e97234c5bfd465`の[run 37043553611](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37043553611)はbuild／deployともsuccess。公開HTML／CSS／JSと指定4文書はHTTP 200、mainとSHA-256一致。
+- PagesからTLS検証つきHTTPSで取得したファイルをローカル配信し、指定3サイズとドラッグ・実タッチ・BFCache・reduced-motionのブラウザ回帰をPASS。公開HTTPS URLへのChromium直接接続は環境CAが未信頼で未実施。CAをブラウザ信頼ストアへ追加する操作は自動承認審査により拒否されたため、信頼設定を変更していません。
+- Git CLIのpush認証が利用できないため、接続済みGitHub APIで同一ツリーを検証してmainへfast-forward反映し、ローカルmain／origin/mainを同期しています。
 - iPhone／Androidの実際の複数指、safe area、端末回転・中断復帰、刺激量、発熱、幼児の操作感は実機確認待ちです。

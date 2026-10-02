@@ -30,7 +30,9 @@ APP-013「かたちポン！」は正本`docs/APP-013-shape-match.md`に沿っ�
 - Chromiumで指定3サイズの表示・操作・不要スクロールなし、実際の3指タッチイベント、同一ピースの所有権、キャンセル、回転、実BFCacheの`pageshow.persisted=true`、reduced-motionをPASS
 - 最終コードの実時間181.1秒／149ラウンド／447ドラッグで、DOM34、タイマー最大1本（待機時0本）、console error／warningなし、外部通信なしを確認
 - 既存ポータル5カードとAPP-002／003／004／006／010／011を3サイズでスモーク回帰PASS。検証中の既存分析通信はローカルでスタブ化。既存アプリ・共通ファイル・ConoHa workflowは変更なし
-- Pagesの最終結果はデプロイ確認後に追記
+- 実装commit `3663218d1bdcef35a6f7d217d1e97234c5bfd465`の[Pages run 37043553611](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37043553611)はbuild／deployともsuccess。公開HTML／CSS／JSと指定4文書はHTTP 200、mainとSHA-256一致
+- TLS検証つきHTTPSで取得したPagesファイルをローカル配信し、指定3サイズ、ドラッグ、実タッチ、実BFCache、reduced-motionのブラウザ回帰をPASS。公開HTTPS URLへのChromium直接接続は環境CA未信頼のため未実施。信頼ストアへのCA追加は自動承認審査が拒否したため、信頼設定は変更なし
+- Git CLIのpush認証が利用できず、接続済みGitHub APIで検証済みと同一のツリーをmainへfast-forward反映し、ローカルmain／origin/mainを同期
 - 試作直接URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-013-shape-match/`
 - 次はiPhone Safariでドラッグのしやすさ、判定の広さ、戻り、刺激、2〜3本指、回転、safe area、中断・BFCache、視差効果低減、2〜3分の発熱を確認。PM承認後に正式公開・分析・ポータル等を別工程で判断
 

@@ -12,7 +12,10 @@
 - 無音、保存・外部通信なし。共通ポータル、共通ホーム、GA4、Clarity、ConoHa allowlist、追加形状は未追加
 - Node540ドラッグ回帰、APP-010／011既存回帰、全18 JS構文、指定3サイズ、実3指タッチ、実BFCache、reduced-motion、既存ポータル＋6アプリの3サイズスモーク回帰をPASS
 - 最終コードの実時間181.1秒／447ドラッグでDOM34固定、タイマー最大1本、console error／warningなし、外部通信なしを確認
-- Pagesの最終結果はデプロイ確認後に追記。iPhone実機確認とPM操作感承認は未実施、正式公開は保留
+- 実装commit `3663218d1bdcef35a6f7d217d1e97234c5bfd465`のPages run `37043553611`はbuild／deployともsuccess。公開HTML／CSS／JSと指定4文書のHTTP 200、mainとのSHA-256一致を確認
+- HTTPS取得したPages版をローカル配信し、指定3サイズ、主要操作、実タッチ、実BFCache、reduced-motionを回帰PASS。公開URLへのChromium直接接続は環境CA未信頼で未実施。CA追加は自動承認審査に拒否され、ブラウザ信頼設定は変更なし
+- Git CLIのpush認証不可のため、検証済みと同一ツリーをGitHub APIでmainへfast-forward反映し、ローカルmain／origin/mainを同期
+- iPhone実機確認とPM操作感承認は未実施、正式公開は保留
 
 ## 2026-09-06 — APP-011 水たまり・初回ヒント・着水反応の仕上げ
 
