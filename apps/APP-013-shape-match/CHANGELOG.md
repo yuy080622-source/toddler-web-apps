@@ -2,6 +2,10 @@
 
 ## 2026-10-08 — 5動物の絵本風デザイン・輪郭一致・滑らかな動作
 
+- Pages：実装commit `de9696dd6010192695f857d8aae04846cd6993ff`の[run 37781153375](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37781153375)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200、mainとSHA-256一致
+- TLS検証つきHTTPSで取得したPages版の5種×3サイズ・輪郭一致・全動作・循環・実タッチ・実BFCache・reduced-motion等のブラウザ回帰もPASS。公開HTTPS URLへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可。証明書検証・信頼設定は変更なし
+- mainへのcommit／push成功、main／origin/main同期。実機確認・PM承認後に正式公開を別判断。仕様変更を要する未解決問題はなし
+
 - Chromiumの5種×3サイズで同一形状参照・描画境界一致・ピース保持・全固有動作・ひよこ／魚の一体移動・固定循環、広い吸着・各形状の範囲外戻り／実pointercancelをPASS
 - 実2指所有権、100回高速入力、完成中入力、lostpointercapture、resize・回転、visibilitychange相当、実BFCache（pageshow.persisted=true）、全5種のreduced-motionをPASS
 - 通常／完成のスクリーンショット30枚と3サイズの比較シートを生成して目視レビュー。犬の横長胴体・首・脚、狐の顔・耳・頬、周囲パーツの接続・輪郭・画面内配置を確認
