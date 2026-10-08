@@ -1,20 +1,20 @@
 :root {
   color-scheme: light;
-  --piece-size: clamp(88px, 24.6vw, 104px);
-  --target-size: calc(var(--piece-size) + 14px);
+  --piece-size: clamp(120px, 36vmin, 150px);
+  --socket-size: calc(var(--piece-size) + 12px);
   background: #faf8f1;
   font-family: system-ui, sans-serif;
 }
-
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 main {
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
-    max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
 }
 #board {
   position: relative;
@@ -24,26 +24,30 @@ main {
   margin-inline: auto;
   touch-action: none;
 }
-.circle { --color: #eb887c; --outline: #c27168; --tint: #f6e2dc; }
-.square { --color: #72aaca; --outline: #5d8aa5; --tint: #e0edf2; }
-.triangle { --color: #e8bf55; --outline: #ab8d42; --tint: #f5ecd0; }
+#board[data-shape="circle"] { --color: #82b397; --outline: #56816a; --tint: #e0eee4; --part: #a8c6a1; }
+#board[data-shape="square"] { --color: #d5ad7f; --outline: #987451; --tint: #f1e7d9; --part: #d5ad7f; }
+#board[data-shape="triangle"] { --color: #e7a06d; --outline: #b37851; --tint: #f6e7da; --part: #e7a06d; }
 .target, .piece { position: absolute; left: 0; top: 0; }
 .target {
-  width: var(--target-size);
-  height: var(--target-size);
+  width: calc(var(--socket-size) * 2);
+  height: calc(var(--socket-size) * 1.3);
   pointer-events: none;
+  transition: opacity 220ms ease-out;
+  z-index: 1;
 }
 svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.target svg {
-  fill: var(--tint);
-  stroke: var(--outline);
-  stroke-width: 2.5;
-  stroke-linejoin: round;
-  opacity: .72;
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-.target.is-near svg { opacity: 1; transform: scale(1.025); }
-.target.is-filled svg { opacity: .9; }
+.animal-part { fill: var(--part); stroke: var(--outline); stroke-width: 1.3; stroke-linejoin: round; }
+.cream { fill: #fff5df; }
+.eye { fill: #594b40; }
+.face-line { fill: none; stroke: #594b40; stroke-width: 1.6; stroke-linecap: round; }
+.animal-surround { opacity: .27; transition: opacity 180ms ease-out; }
+.animal-details { opacity: 0; transition: opacity 180ms ease-out; }
+.socket { fill: var(--tint); stroke: var(--outline); stroke-width: 2; stroke-linejoin: round; transition: fill 180ms ease-out; }
+.is-near .socket { fill: #fffaf0; }
+.shell-lines { fill: none; stroke: var(--outline); stroke-width: 1.5; opacity: 0; }
+.is-complete .animal-surround, .is-complete .animal-details { opacity: 1; }
+.is-complete .socket { fill: var(--color); }
+.is-complete .target { z-index: 3; }
 .piece {
   width: var(--piece-size);
   height: var(--piece-size);
@@ -54,35 +58,39 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
   touch-action: none;
   cursor: grab;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 180ms ease-out;
+  transition: transform 180ms ease-out, opacity 120ms ease-out;
   z-index: 2;
 }
 .piece-art { display: block; width: 100%; height: 100%; transform-origin: center; }
 .piece svg { fill: var(--color); stroke: var(--outline); stroke-width: 1.5; stroke-linejoin: round; }
-.piece.is-dragging { transition: none; cursor: grabbing; z-index: 3; }
-.piece.is-dragging .piece-art { transform: scale(1.035); }
+.piece.is-dragging { transition: none; cursor: grabbing; }
+.piece.is-dragging .piece-art { transform: scale(1.025); }
 .piece.is-returning { transition-duration: 280ms; }
-.piece.is-placed { cursor: default; z-index: 1; }
-.piece.is-popping .piece-art { animation: pop 280ms ease-out 1; }
-#board.is-complete .target svg { animation: complete 360ms ease-out 180ms 1; }
-.piece:focus-visible { outline: 3px solid #536c76; outline-offset: 6px; border-radius: 8px; }
-#board.is-layout .piece { transition: none; }
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-@keyframes pop { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.045); } }
-@keyframes complete { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.035); } }
+.piece.is-placed { cursor: default; }
+.is-complete .piece { opacity: 0; }
+.is-transitioning .target, .is-transitioning .piece { opacity: 0; }
+.is-entering .target, .is-entering .piece { animation: stage-in 180ms ease-out 1; }
+.piece:focus-visible { outline: 3px solid #536c76; outline-offset: 6px; border-radius: 12px; }
+#board.is-layout .piece, #board.is-layout .target, #board.is-layout svg * { transition: none; animation: none; }
+.is-complete .turtle-head { animation: turtle-peek 1000ms ease-in-out 120ms 1; }
+.dog-tail, .fox-ear { transform-box: fill-box; }
+.dog-tail { transform-origin: right bottom; }
+.fox-ear { transform-origin: center bottom; }
+.is-complete .dog-tail { animation: dog-wag 1000ms ease-in-out 120ms 1; }
+.is-complete .fox-ear-left { animation: fox-left 1000ms ease-in-out 120ms 1; }
+.is-complete .fox-ear-right { animation: fox-right 1000ms ease-in-out 120ms 1; }
+@keyframes turtle-peek { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(3px); } }
+@keyframes dog-wag { 0%, 50%, 100% { transform: rotate(0); } 20%, 70% { transform: rotate(-12deg); } 35%, 85% { transform: rotate(8deg); } }
+@keyframes fox-left { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(-7deg); } }
+@keyframes fox-right { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(7deg); } }
+@keyframes stage-in { from { opacity: 0; } to { opacity: 1; } }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .piece, .piece.is-returning { transition-duration: 60ms; }
   .piece.is-dragging .piece-art { transform: none; }
-  .target svg { transition: none; }
-  .target.is-near svg { transform: none; }
-  .piece.is-popping .piece-art, #board.is-complete .target svg { animation: none; }
+  .target { transition-duration: 120ms; }
+  .animal-surround, .animal-details, .socket { transition-duration: 60ms; }
+  .is-entering .target, .is-entering .piece { animation-duration: 120ms; }
+  .is-complete .turtle-head, .is-complete .dog-tail,
+  .is-complete .fox-ear-left, .is-complete .fox-ear-right { animation: none; }
 }

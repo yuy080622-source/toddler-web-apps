@@ -4,36 +4,61 @@
   const board = document.getElementById("board");
   const status = document.getElementById("status");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
-  const names = { circle: "まる", square: "しかく", triangle: "さんかく" };
-  const pieces = Object.keys(names).map((shape) => ({
-    shape,
-    element: document.getElementById(`piece-${shape}`),
-    target: document.getElementById(`target-${shape}`),
+  const stages = [
+    { shape: "circle", animal: "turtle", name: "かめ", label: "まるをかめの甲羅へ", targetLabel: "かめのまるい甲羅の型" },
+    { shape: "square", animal: "dog", name: "いぬ", label: "しかくをいぬの胴体へ", targetLabel: "いぬのしかくい胴体の型" },
+    { shape: "triangle", animal: "fox", name: "きつね", label: "さんかくをきつねの顔へ", targetLabel: "きつねのさんかくの顔の型" }
+  ];
+  const piece = {
+    element: document.getElementById("piece"),
+    target: document.getElementById("target"),
     start: { x: 0, y: 0 },
     center: { x: 0, y: 0 },
     destination: { x: 0, y: 0 },
     activePointerId: null,
     offset: { x: 0, y: 0 },
-    placed: false,
     size: 0,
     radius: 0
+  };
+  const visuals = stages.map((stage) => ({
+    shape: document.getElementById(`shape-${stage.shape}`),
+    animal: document.getElementById(`animal-${stage.animal}`)
   }));
+  let stageIndex = 0;
+  let state = "idle";
   let bounds;
   let suspended = document.hidden;
-  let complete = false;
-  let resetTimer = null;
+  let stageTimer = null;
+  let timerVersion = 0;
 
-  function move(piece, point) {
+  function setState(next) {
+    state = next;
+    board.dataset.state = next;
+  }
+
+  function move(point) {
     piece.center = { ...point };
     piece.element.style.transform = `translate3d(${point.x - piece.size / 2}px, ${point.y - piece.size / 2}px, 0)`;
   }
 
-  function clearResetTimer() {
-    if (resetTimer !== null) clearTimeout(resetTimer);
-    resetTimer = null;
+  function clearStageTimer() {
+    timerVersion += 1;
+    if (stageTimer !== null) clearTimeout(stageTimer);
+    stageTimer = null;
   }
 
-  function release(piece) {
+  // Snap, reward, and fade reuse one slot. Stale callbacks cannot advance a stage.
+  function schedule(callback, delay) {
+    clearStageTimer();
+    const version = timerVersion;
+    stageTimer = setTimeout(() => {
+      if (version !== timerVersion || suspended) return;
+      stageTimer = null;
+      callback();
+    }, delay);
+  }
+
+  function release() {
     const pointerId = piece.activePointerId;
     // Clear ownership before releasePointerCapture can dispatch lostpointercapture.
     piece.activePointerId = null;
@@ -45,165 +70,162 @@
   }
 
   function clearEffects() {
-    board.classList.remove("is-complete");
-    pieces.forEach((piece) => {
-      piece.element.classList.remove("is-popping", "is-returning");
-      piece.target.classList.remove("is-near");
-    });
+    board.classList.remove("is-complete", "is-transitioning", "is-entering");
+    piece.element.classList.remove("is-returning", "is-placed");
+    piece.target.classList.remove("is-near");
   }
 
-  function resetRound() {
-    clearResetTimer();
-    complete = false;
-    clearEffects();
-    pieces.forEach((piece) => {
-      release(piece);
-      piece.placed = false;
-      piece.element.classList.remove("is-placed");
-      piece.element.setAttribute("aria-disabled", "false");
-      piece.target.classList.remove("is-filled");
+  function applyStage() {
+    const currentStage = stages[stageIndex];
+    board.dataset.shape = currentStage.shape;
+    board.dataset.animal = currentStage.animal;
+    visuals.forEach((visual, index) => {
+      visual.shape.toggleAttribute("hidden", index !== stageIndex);
+      visual.animal.toggleAttribute("hidden", index !== stageIndex);
     });
+    piece.element.setAttribute("aria-label", currentStage.label);
+    piece.element.setAttribute("aria-disabled", "false");
+    piece.target.setAttribute("aria-label", currentStage.targetLabel);
     status.textContent = "";
-    layout();
   }
 
   function layout() {
-    // A resize during completion starts a stable new round, with no stale timer.
-    if (complete) {
-      resetRound();
-      return;
-    }
     bounds = board.getBoundingClientRect();
+    piece.size = piece.element.offsetWidth;
+    const targetWidth = piece.target.offsetWidth;
+    const targetHeight = piece.target.offsetHeight;
+    const x = bounds.width / 2;
+    const y = Math.max(targetHeight / 2 + 4, bounds.height * 0.30);
+    piece.destination = { x, y };
+    piece.start = { x, y: Math.min(bounds.height * 0.80, bounds.height - piece.size / 2 - 4) };
+    const socketSize = targetWidth / 2;
+    // The wide circular region follows the rendered socket and piece sizes.
+    // Leave 30px between it and the starting center so a touch alone won't match.
+    piece.radius = Math.min(socketSize / 2 + piece.size * 0.60, piece.start.y - y - 30);
+    piece.target.style.transform = `translate3d(${x - targetWidth / 2}px, ${y - targetHeight / 2}px, 0)`;
+    move(piece.start);
+  }
+
+  function resetCurrentStage() {
+    clearStageTimer();
     board.classList.add("is-layout");
+    release();
     clearEffects();
-    pieces.forEach((piece, index) => {
-      release(piece);
-      piece.size = piece.element.offsetWidth;
-      const targetSize = piece.target.offsetWidth;
-      const x = bounds.width * (index + 0.5) / 3;
-      const half = targetSize / 2 + 4;
-      const y = Math.max(half, Math.min(bounds.height * 0.29, bounds.height - half));
-      piece.start = { x, y: Math.max(half, Math.min(bounds.height * 0.75, bounds.height - half)) };
-      piece.destination = { x, y };
-      // Circular region extends 22px beyond the target's bounding box midpoint.
-      piece.radius = targetSize / 2 + 22;
-      piece.target.style.transform = `translate3d(${x - targetSize / 2}px, ${y - targetSize / 2}px, 0)`;
-      move(piece, piece.placed ? piece.destination : piece.start);
-    });
-    // Flush only on layout changes so later user drops can transition normally.
+    setState("idle");
+    applyStage();
+    layout();
+    // Flush only on layout changes so later user snaps/returns can transition.
     board.getBoundingClientRect();
     board.classList.remove("is-layout");
   }
 
-  function isNear(piece) {
-    const distance = Math.hypot(piece.center.x - piece.destination.x, piece.center.y - piece.destination.y);
-    // Expanded regions can overlap. A closer, differently shaped target must
-    // still return the piece home instead of snapping to the more distant one.
-    return distance <= piece.radius && pieces.every((item) => item === piece ||
-      Math.hypot(piece.center.x - item.destination.x, piece.center.y - item.destination.y) >= distance);
+  function nextStage() {
+    stageIndex = (stageIndex + 1) % stages.length;
+    resetCurrentStage();
+    board.classList.add("is-entering");
   }
 
-  function follow(piece, event) {
-    const half = piece.size * 1.035 / 2;
-    move(piece, {
+  function finishSnap() {
+    board.classList.add("is-complete");
+    piece.target.setAttribute("aria-label", `${stages[stageIndex].name}ができた`);
+    status.textContent = `${stages[stageIndex].name}ができた`;
+    schedule(() => {
+      setState("transitioning");
+      board.classList.add("is-transitioning");
+      schedule(nextStage, motion.matches ? 120 : 220);
+    }, 1400);
+  }
+
+  function snap() {
+    if (suspended || (state !== "idle" && state !== "dragging")) return;
+    setState("completing");
+    release();
+    piece.element.classList.remove("is-returning");
+    piece.element.classList.add("is-placed");
+    piece.element.setAttribute("aria-disabled", "true");
+    move(piece.destination);
+    schedule(finishSnap, motion.matches ? 60 : 180);
+  }
+
+  function follow(event) {
+    const half = piece.size * 1.025 / 2;
+    move({
       x: Math.max(half, Math.min(bounds.width - half, event.clientX - bounds.left + piece.offset.x)),
       y: Math.max(half, Math.min(bounds.height - half, event.clientY - bounds.top + piece.offset.y))
     });
-    piece.target.classList.toggle("is-near", isNear(piece));
+    const distance = Math.hypot(piece.center.x - piece.destination.x, piece.center.y - piece.destination.y);
+    piece.target.classList.toggle("is-near", distance <= piece.radius + piece.size * 0.12);
+    if (distance <= piece.radius) snap();
   }
 
-  function place(piece) {
-    release(piece);
-    piece.placed = true;
-    piece.element.classList.remove("is-returning");
-    piece.element.classList.add("is-placed");
-    if (!motion.matches) piece.element.classList.add("is-popping");
-    piece.element.setAttribute("aria-disabled", "true");
-    piece.target.classList.add("is-filled");
-    move(piece, piece.destination);
-    status.textContent = `${names[piece.shape]}が入りました`;
-    if (pieces.every((item) => item.placed)) {
-      complete = true;
-      board.classList.add("is-complete");
-      status.textContent = "できた";
-      clearResetTimer();
-      resetTimer = setTimeout(resetRound, 1100);
-    }
-  }
-
-  function returnHome(piece) {
-    release(piece);
+  function returnHome() {
+    release();
+    setState("idle");
     piece.element.classList.add("is-returning");
-    move(piece, piece.start);
+    move(piece.start);
   }
 
-  pieces.forEach((piece) => {
-    piece.element.addEventListener("pointerdown", (event) => {
-      if (suspended || complete || piece.placed || piece.activePointerId !== null || event.button !== 0) return;
-      // A pointer already owning another piece cannot acquire this one.
-      if (pieces.some((item) => item.activePointerId === event.pointerId)) return;
-      event.preventDefault();
-      const rect = piece.element.getBoundingClientRect();
-      piece.offset = {
-        x: rect.left + rect.width / 2 - event.clientX,
-        y: rect.top + rect.height / 2 - event.clientY - (motion.matches ? 0 : 6)
-      };
-      piece.activePointerId = event.pointerId;
-      piece.element.classList.remove("is-returning", "is-popping");
-      piece.element.classList.add("is-dragging");
-      piece.element.setPointerCapture(event.pointerId);
-      follow(piece, event);
+  piece.element.addEventListener("pointerdown", (event) => {
+    if (suspended || state !== "idle" || piece.activePointerId !== null || event.button !== 0) return;
+    event.preventDefault();
+    const rect = piece.element.getBoundingClientRect();
+    piece.offset = {
+      x: rect.left + rect.width / 2 - event.clientX,
+      y: rect.top + rect.height / 2 - event.clientY - (motion.matches ? 0 : 10)
+    };
+    piece.activePointerId = event.pointerId;
+    setState("dragging");
+    piece.element.classList.remove("is-returning");
+    piece.element.classList.add("is-dragging");
+    piece.element.setPointerCapture(event.pointerId);
+    follow(event);
+  });
+  piece.element.addEventListener("pointermove", (event) => {
+    if (piece.activePointerId !== event.pointerId) return;
+    event.preventDefault();
+    follow(event);
+  });
+  piece.element.addEventListener("pointerup", (event) => {
+    if (piece.activePointerId !== event.pointerId) return;
+    event.preventDefault();
+    follow(event);
+    if (state === "dragging") returnHome();
+  });
+  ["pointercancel", "lostpointercapture"].forEach((type) => {
+    piece.element.addEventListener(type, (event) => {
+      if (piece.activePointerId === event.pointerId) returnHome();
     });
-    piece.element.addEventListener("pointermove", (event) => {
-      if (piece.activePointerId !== event.pointerId) return;
-      event.preventDefault();
-      follow(piece, event);
-    });
-    piece.element.addEventListener("pointerup", (event) => {
-      if (piece.activePointerId !== event.pointerId) return;
-      event.preventDefault();
-      follow(piece, event);
-      if (isNear(piece)) place(piece);
-      else returnHome(piece);
-    });
-    ["pointercancel", "lostpointercapture"].forEach((type) => {
-      piece.element.addEventListener(type, (event) => {
-        if (piece.activePointerId === event.pointerId) returnHome(piece);
-      });
-    });
-    piece.element.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      if (!event.repeat && !suspended && !complete && !piece.placed && piece.activePointerId === null) place(piece);
-    });
-    // Supports assistive technology's button activation without turning taps into matches.
-    piece.element.addEventListener("click", (event) => {
-      if (event.detail === 0 && !suspended && !complete && !piece.placed && piece.activePointerId === null) place(piece);
-    });
-    piece.element.addEventListener("animationend", () => piece.element.classList.remove("is-popping"));
-    piece.element.addEventListener("transitionend", (event) => {
-      if (event.target === piece.element && event.propertyName === "transform") piece.element.classList.remove("is-returning");
-    });
+  });
+  piece.element.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    if (!event.repeat && state === "idle") snap();
+  });
+  piece.element.addEventListener("click", (event) => {
+    if (event.detail === 0 && state === "idle") snap();
+  });
+  piece.element.addEventListener("transitionend", (event) => {
+    if (event.target === piece.element && event.propertyName === "transform") piece.element.classList.remove("is-returning");
+  });
+  piece.target.addEventListener("animationend", (event) => {
+    if (event.animationName === "stage-in") board.classList.remove("is-entering");
   });
 
   function suspend() {
     suspended = true;
-    clearResetTimer();
-    if (complete) resetRound();
-    else layout();
+    resetCurrentStage();
   }
 
   function resume() {
     suspended = document.hidden;
-    layout();
+    resetCurrentStage();
   }
 
   document.addEventListener("visibilitychange", () => document.hidden ? suspend() : resume());
   window.addEventListener("pagehide", suspend);
   window.addEventListener("pageshow", resume);
-  window.addEventListener("resize", layout);
-  motion.addEventListener("change", () => {
-    if (motion.matches) pieces.forEach((piece) => piece.element.classList.remove("is-popping"));
-  });
-  layout();
+  window.addEventListener("resize", resetCurrentStage);
+  // CSS applies the new motion preference immediately; reset any partial reward.
+  motion.addEventListener("change", resetCurrentStage);
+  resetCurrentStage();
 })();

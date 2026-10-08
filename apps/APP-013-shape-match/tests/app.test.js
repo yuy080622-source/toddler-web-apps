@@ -4,18 +4,19 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-
 const root = path.join(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 class Target {
-  constructor(width = 96) {
+  constructor(width = 140, height = width) {
     this.listeners = new Map();
     this.classes = new Set();
     this.captures = new Set();
     this.attributes = {};
+    this.dataset = {};
     this.style = {};
     this.offsetWidth = width;
+    this.offsetHeight = height;
     this.classList = {
       add: (...names) => names.forEach((name) => this.classes.add(name)),
       remove: (...names) => names.forEach((name) => this.classes.delete(name)),
@@ -32,12 +33,20 @@ class Target {
     (this.listeners.get(type) || []).forEach((callback) => callback(input));
   }
   setAttribute(name, value) { this.attributes[name] = value; }
+  toggleAttribute(name, active) {
+    if (active) this.attributes[name] = "";
+    else delete this.attributes[name];
+  }
   hasPointerCapture(id) { return this.captures.has(id); }
   setPointerCapture(id) { this.captures.add(id); }
   releasePointerCapture(id) {
     this.captures.delete(id);
     this.dispatch("lostpointercapture", { pointerId: id });
   }
+}
+
+function translation(element) {
+  return element.style.transform.match(/translate3d\(([-\d.]+)px, ([-\d.]+)px/).slice(1).map(Number);
 }
 
 function environment(reduced = false) {
@@ -48,161 +57,242 @@ function environment(reduced = false) {
   document.hidden = false;
   const board = new Target();
   const status = { textContent: "" };
-  let width = 370;
-  let height = 824;
+  const piece = new Target();
+  const target = new Target(304, 198);
+  const shapes = ["circle", "square", "triangle"].map(() => new Target());
+  const animals = ["turtle", "dog", "fox"].map(() => new Target());
+  const ids = { board, status, piece, target };
+  ["circle", "square", "triangle"].forEach((shape, i) => { ids["shape-" + shape] = shapes[i]; });
+  ["turtle", "dog", "fox"].forEach((animal, i) => { ids["animal-" + animal] = animals[i]; });
+  let width = 366;
+  let height = 820;
   let now = 0;
   let timerId = 0;
+  let maxTimers = 0;
   const timers = new Map();
-  const shapes = ["circle", "square", "triangle"];
-  const pieces = shapes.map(() => new Target());
-  const targets = shapes.map(() => new Target(110));
-  const ids = { board, status };
-  board.getBoundingClientRect = () => ({ left: 10, top: 10, width, height });
-  shapes.forEach((shape, i) => {
-    ids[`piece-${shape}`] = pieces[i];
-    ids[`target-${shape}`] = targets[i];
-    pieces[i].getBoundingClientRect = () => {
-      const [x, y] = translation(pieces[i]);
-      return { left: x + 10, top: y + 10, width: 96, height: 96 };
+  board.getBoundingClientRect = () => ({ left: 12, top: 12, width, height });
+  [piece, target].forEach((element) => {
+    element.getBoundingClientRect = () => {
+      const [x, y] = translation(element);
+      return { left: x + 12, top: y + 12, width: element.offsetWidth, height: element.offsetHeight };
     };
   });
   document.getElementById = (id) => ids[id];
   const sandbox = {
     window, document, matchMedia: () => media, console,
-    setTimeout(callback, duration) {
+    setTimeout(callback, delay) {
       const id = ++timerId;
-      timers.set(id, { callback, at: now + duration });
+      timers.set(id, { callback, at: now + delay });
+      maxTimers = Math.max(maxTimers, timers.size);
       return id;
     },
     clearTimeout: (id) => timers.delete(id)
   };
   vm.runInNewContext(source, sandbox, { filename: "APP-013/app.js" });
   function advance(milliseconds) {
-    now += milliseconds;
-    [...timers].forEach(([id, timer]) => {
-      if (timer.at <= now) { timers.delete(id); timer.callback(); }
-    });
+    const end = now + milliseconds;
+    while (true) {
+      const next = [...timers].sort((a, b) => a[1].at - b[1].at)[0];
+      if (!next || next[1].at > end) break;
+      now = next[1].at;
+      timers.delete(next[0]);
+      next[1].callback();
+    }
+    now = end;
   }
   function point(element) {
     const [x, y] = translation(element);
-    return { clientX: x + element.offsetWidth / 2 + 10, clientY: y + element.offsetWidth / 2 + 10 };
+    return { clientX: x + element.offsetWidth / 2 + 12, clientY: y + element.offsetHeight / 2 + 12 };
   }
-  function drag(index, destination, id = index + 1) {
-    pieces[index].dispatch("pointerdown", { pointerId: id, ...point(pieces[index]) });
-    pieces[index].dispatch("pointermove", { pointerId: id, ...destination });
-    pieces[index].dispatch("pointerup", { pointerId: id, ...destination });
+  function start(id = 1) { piece.dispatch("pointerdown", { pointerId: id, ...point(piece) }); }
+  function approach(id = 1, pointOverride = point(target)) {
+    start(id);
+    piece.dispatch("pointermove", { pointerId: id, ...pointOverride });
   }
-  return { window, document, media, board, status, pieces, targets, timers, point, drag, advance,
-    resize(w, h) { width = w; height = h; window.dispatch("resize"); }
+  return { window, document, media, board, status, piece, target, shapes, animals, timers, point, start, approach, advance,
+    maxTimers: () => maxTimers,
+    resize(w, h, size = 140) {
+      width = w - 24; height = h - 24;
+      piece.offsetWidth = piece.offsetHeight = size;
+      target.offsetWidth = 2 * (size + 12);
+      target.offsetHeight = 1.3 * (size + 12);
+      window.dispatch("resize");
+    }
   };
 }
 
-function translation(element) {
-  return element.style.transform.match(/translate3d\(([-\d.]+)px, ([-\d.]+)px/).slice(1).map(Number);
+function checkStage(env, shape, animal) {
+  assert.equal(env.board.dataset.shape, shape);
+  assert.equal(env.board.dataset.animal, animal);
+  assert.equal(env.shapes.filter((item) => !("hidden" in item.attributes)).length, 1, "one visible shape");
+  assert.equal(env.animals.filter((item) => !("hidden" in item.attributes)).length, 1, "one visible animal");
 }
-function placed(env, index) { return env.pieces[index].classes.has("is-placed"); }
-function finish(env) { env.pieces.forEach((_, i) => env.drag(i, env.point(env.targets[i]))); }
 
 const env = environment();
-const listenerCount = () => [env.window, env.document, env.media, ...env.pieces].reduce((sum, target) =>
+const listenerCount = () => [env.window, env.document, env.media, env.piece, env.target].reduce((sum, target) =>
   sum + [...target.listeners.values()].reduce((count, listeners) => count + listeners.length, 0), 0);
 const originalListeners = listenerCount();
-const home = env.point(env.pieces[0]);
-env.drag(0, env.point(env.targets[1]));
-assert.equal(placed(env, 0), false, "wrong shape never places");
-assert.deepEqual(env.point(env.pieces[0]), home, "wrong shape returns home");
-assert.equal(env.status.textContent, "", "wrong drop produces no negative announcement");
-env.drag(0, { clientX: 10, clientY: 800 });
-assert.deepEqual(env.point(env.pieces[0]), home, "outside drop returns home");
-const near = env.point(env.targets[0]);
-env.drag(0, { clientX: near.clientX, clientY: near.clientY + 86 });
-assert.equal(placed(env, 0), false, "drop beyond the generous boundary still returns home");
-env.drag(0, { clientX: near.clientX + 70, clientY: near.clientY });
-assert.equal(placed(env, 0), false, "overlapping wide regions prefer the nearer target, preserving wrong-shape return");
-env.drag(0, { clientX: near.clientX, clientY: near.clientY + 70 });
-assert.equal(placed(env, 0), true, "wide hit region accepts outside the visible target");
-assert.deepEqual(env.point(env.pieces[0]), env.point(env.targets[0]), "success snaps exactly to target center");
-env.pieces[0].dispatch("pointerdown", { ...home });
-assert.equal(env.pieces[0].captures.size, 0, "placed piece cannot be dragged");
-env.drag(1, env.point(env.targets[1]));
-env.drag(2, env.point(env.targets[2]));
-assert.equal(env.timers.size, 1, "three shapes schedule one reset");
-for (let i = 0; i < 100; i++) env.pieces[0].dispatch("pointerdown", home);
-assert.equal(env.timers.size, 1, "completion spam does not add timers");
-env.advance(1099);
-assert.ok(env.board.classes.has("is-complete"), "completion lasts the intended short interval");
-env.advance(1);
+checkStage(env, "circle", "turtle");
+assert.equal(env.board.dataset.state, "idle");
 assert.equal(env.timers.size, 0);
-assert.ok(env.pieces.every((_, i) => !placed(env, i)), "all pieces reset");
+const home = env.point(env.piece);
 
-// Three independent owners; a second finger on the same piece has no effect.
-env.pieces.forEach((piece, i) => piece.dispatch("pointerdown", { pointerId: i + 10, ...env.point(piece) }));
-env.pieces[0].dispatch("pointerdown", { pointerId: 99, ...home });
-env.pieces[0].dispatch("pointerup", { pointerId: 99, ...env.point(env.targets[0]) });
-assert.equal(placed(env, 0), false);
-assert.ok(env.pieces.every((piece) => piece.captures.size === 1));
-env.pieces.forEach((piece, i) => piece.dispatch("pointerup", { pointerId: i + 10, ...env.point(env.targets[i]) }));
-assert.ok(env.pieces.every((_, i) => placed(env, i)), "three fingers can finish simultaneously");
-env.advance(1100);
+// A regular touch is not a tap-to-complete shortcut.
+env.start();
+assert.equal(env.board.dataset.state, "dragging");
+env.piece.dispatch("pointerup", home);
+assert.equal(env.board.dataset.state, "idle");
+assert.deepEqual(env.point(env.piece), home);
+assert.equal(env.status.textContent, "");
+assert.equal(env.timers.size, 0);
 
-for (const type of ["pointercancel", "lostpointercapture"]) {
-  env.pieces[0].dispatch("pointerdown", { pointerId: 42, ...env.point(env.pieces[0]) });
-  env.pieces[0].dispatch("pointermove", { pointerId: 42, ...env.point(env.targets[0]) });
-  assert.ok(env.targets[0].classes.has("is-near"), "correct target previews only while near");
-  env.pieces[0].dispatch(type, { pointerId: 42 });
-  assert.equal(placed(env, 0), false, "cancellation never turns into a match");
-  assert.equal(env.pieces[0].captures.size, 0);
-  assert.equal(env.targets[0].classes.has("is-near"), false);
-  assert.deepEqual(env.point(env.pieces[0]), home);
+// Wide magnet accepts well outside the central socket, before pointerup.
+const destination = env.point(env.target);
+env.approach(1, { clientX: destination.clientX + 130, clientY: destination.clientY });
+assert.equal(env.board.dataset.state, "completing", "auto snap happens on pointermove");
+assert.equal(env.piece.captures.size, 0, "snap releases ownership immediately");
+assert.deepEqual(env.point(env.piece), destination);
+assert.equal(env.piece.attributes["aria-disabled"], "true");
+assert.equal(env.board.classList.contains("is-complete"), false, "snap precedes animal completion");
+env.advance(179);
+assert.equal(env.status.textContent, "");
+env.advance(1);
+assert.equal(env.status.textContent, "かめができた");
+assert.equal(env.board.classList.contains("is-complete"), true);
+assert.equal(env.timers.size, 1);
+
+// A late up/cancel and fast repeated inputs cannot start another stage chain.
+for (let i = 0; i < 100; i++) {
+  env.piece.dispatch("pointerdown", { pointerId: i + 2, ...home });
+  env.piece.dispatch("pointermove", { pointerId: i + 2, ...destination });
+  env.piece.dispatch("pointerup", { pointerId: i + 2, ...destination });
+  env.piece.dispatch("pointercancel", { pointerId: 1 });
+  env.piece.dispatch("keydown", { key: "Enter" });
+}
+assert.equal(env.timers.size, 1);
+env.advance(1399);
+checkStage(env, "circle", "turtle");
+env.advance(1);
+assert.equal(env.board.dataset.state, "transitioning");
+assert.equal(env.timers.size, 1);
+env.advance(219);
+checkStage(env, "circle", "turtle");
+env.advance(1);
+checkStage(env, "square", "dog");
+assert.equal(env.board.dataset.state, "idle");
+assert.equal(env.timers.size, 0);
+env.approach();
+env.advance(180);
+assert.equal(env.status.textContent, "いぬができた");
+env.advance(1620);
+checkStage(env, "triangle", "fox");
+env.approach();
+env.advance(180);
+assert.equal(env.status.textContent, "きつねができた");
+env.advance(1620);
+checkStage(env, "circle", "turtle");
+
+// Only the first pointer owns the piece.
+env.start(10);
+env.piece.dispatch("pointerdown", { pointerId: 20, ...home });
+env.piece.dispatch("pointermove", { pointerId: 20, ...env.point(env.target) });
+env.piece.dispatch("pointerup", { pointerId: 20, ...env.point(env.target) });
+assert.equal(env.board.dataset.state, "dragging");
+assert.equal(env.piece.captures.size, 1);
+assert.equal(env.piece.hasPointerCapture(10), true);
+env.piece.dispatch("pointermove", { pointerId: 10, ...env.point(env.target) });
+assert.equal(env.board.dataset.state, "completing");
+env.advance(1800);
+checkStage(env, "square", "dog");
+
+// Outside drops and capture cancellation are neutral and immediately reusable.
+for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+  const start = env.point(env.piece);
+  env.start(42);
+  env.piece.dispatch("pointermove", { pointerId: 42, clientX: 350, clientY: 780 });
+  env.piece.dispatch(type, { pointerId: 42, clientX: 350, clientY: 780 });
+  assert.equal(env.board.dataset.state, "idle");
+  assert.equal(env.piece.captures.size, 0);
+  assert.deepEqual(env.point(env.piece), start);
+  assert.equal(env.status.textContent, "");
+  assert.equal(env.timers.size, 0);
 }
 
-env.drag(0, env.point(env.targets[0]));
-env.pieces[1].dispatch("pointerdown", { pointerId: 55, ...env.point(env.pieces[1]) });
-env.resize(824, 370);
-assert.deepEqual(env.point(env.pieces[0]), env.point(env.targets[0]), "placed piece follows rotation");
-assert.equal(env.pieces[1].captures.size, 0, "rotation releases dragging");
-env.resize(370, 824);
-for (const type of ["visibilitychange", "pagehide"]) {
-  env.drag(1, env.point(env.targets[1]));
-  env.drag(2, env.point(env.targets[2]));
-  assert.equal(env.timers.size, 1);
-  if (type === "visibilitychange") { env.document.hidden = true; env.document.dispatch(type); }
-  else env.window.dispatch(type, { persisted: true });
-  assert.equal(env.timers.size, 0, "suspension cancels completion timer");
-  assert.ok(env.pieces.every((piece) => piece.captures.size === 0));
-  env.drag(0, env.point(env.targets[0]));
-  assert.equal(placed(env, 0), false, "hidden page ignores input");
-  env.document.hidden = false;
-  env.document.dispatch("visibilitychange");
-  env.window.dispatch("pageshow", { persisted: true });
-  env.drag(0, env.point(env.targets[0]));
-  assert.equal(placed(env, 0), true, "return is immediately usable");
+// Interrupt every phase and ensure old callbacks cannot revive a half-complete animal.
+for (const phase of ["dragging", "snapping", "reward", "transitioning"]) {
+  for (const event of ["visibilitychange", "pagehide"]) {
+    const current = env.board.dataset.animal;
+    if (phase === "dragging") env.start();
+    else { env.approach(); if (phase === "reward") env.advance(180); if (phase === "transitioning") env.advance(1580); }
+    const stale = [...env.timers.values()].map((timer) => timer.callback);
+    if (event === "visibilitychange") { env.document.hidden = true; env.document.dispatch(event); }
+    else env.window.dispatch(event, { persisted: true });
+    assert.equal(env.timers.size, 0);
+    assert.equal(env.piece.captures.size, 0);
+    assert.equal(env.board.dataset.state, "idle");
+    assert.equal(env.board.dataset.animal, current, "suspension preserves the current stage");
+    assert.equal(env.board.classList.contains("is-complete"), false);
+    assert.equal(env.piece.attributes["aria-disabled"], "false");
+    stale.forEach((callback) => callback());
+    env.approach();
+    assert.equal(env.timers.size, 0, "hidden input/stale timers are ignored");
+    env.document.hidden = false;
+    env.document.dispatch("visibilitychange");
+    env.window.dispatch("pageshow", { persisted: true });
+    assert.equal(env.board.dataset.state, "idle");
+  }
 }
-env.resize(824, 370);
-finish(env);
-env.resize(1004, 748);
-assert.equal(env.timers.size, 0, "resize in completion cancels stale reset");
+
+for (const [w, h, size] of [[390,844,140],[844,390,140],[1024,768,150]]) {
+  env.approach();
+  env.advance(180);
+  const animal = env.board.dataset.animal;
+  env.resize(w, h, size);
+  assert.equal(env.board.dataset.animal, animal);
+  assert.equal(env.board.dataset.state, "idle");
+  assert.equal(env.timers.size, 0);
+  const p = env.piece.getBoundingClientRect();
+  const t = env.target.getBoundingClientRect();
+  assert.ok(p.left >= 12 && p.top >= 12 && p.left + p.width <= w - 12 && p.top + p.height <= h - 12);
+  assert.ok(t.left >= 12 && t.top >= 12 && t.left + t.width <= w - 12 && t.top + t.height <= h - 12);
+  assert.ok(t.top + t.height < p.top, "animal and piece are separated");
+  env.start();
+  assert.equal(env.board.dataset.state, "dragging", "landscape touch alone does not complete");
+  env.piece.dispatch("pointercancel", { pointerId: 1 });
+}
 
 const reduced = environment(true);
-finish(reduced);
-assert.ok(reduced.pieces.every((piece) => !piece.classes.has("is-popping")), "reduced motion has no bounce");
-assert.equal(reduced.timers.size, 1, "reduced motion still completes and resets");
-reduced.advance(1100);
-reduced.pieces[0].dispatch("keydown", { key: "Enter" });
-assert.equal(placed(reduced, 0), true, "keyboard activates correct shape");
-reduced.pieces[1].dispatch("click", { detail: 0 });
-assert.equal(placed(reduced, 1), true, "assistive button activation works");
-reduced.pieces[2].dispatch("click", { detail: 1 });
-assert.equal(placed(reduced, 2), false, "a plain tap is not a match");
+reduced.approach();
+reduced.advance(59);
+assert.equal(reduced.status.textContent, "");
+reduced.advance(1);
+assert.equal(reduced.status.textContent, "かめができた");
+reduced.advance(1520);
+checkStage(reduced, "square", "dog");
+reduced.piece.dispatch("keydown", { key: " " });
+assert.equal(reduced.board.dataset.state, "completing");
+reduced.advance(1580);
+checkStage(reduced, "triangle", "fox");
+reduced.piece.dispatch("click", { detail: 1 });
+assert.equal(reduced.board.dataset.state, "idle", "ordinary click is not a shortcut");
+reduced.piece.dispatch("click", { detail: 0 });
+assert.equal(reduced.board.dataset.state, "completing", "assistive activation is supported");
+reduced.media.matches = false;
+reduced.media.dispatch("change");
+assert.equal(reduced.board.dataset.state, "idle");
+assert.equal(reduced.timers.size, 0);
 
-// 198 seconds on the deterministic clock, with 540 successful drag operations.
-for (let i = 0; i < 180; i++) {
-  finish(env);
+// 300 stages / 540 seconds on the deterministic clock, with repeated BFCache return.
+env.resize(390, 844);
+for (let i = 0; i < 300; i++) {
+  env.approach();
   assert.equal(env.timers.size, 1);
-  env.advance(1100);
+  env.advance(1800);
   assert.equal(env.timers.size, 0);
   env.window.dispatch("pageshow", { persisted: true });
 }
-assert.equal(listenerCount(), originalListeners, "rounds and BFCache return never add listeners");
-assert.ok(env.pieces.every((piece) => piece.captures.size === 0));
-console.log("APP-013 deterministic regression: PASS (drag, 3 pointers, lifecycle, reduced motion, 540 drags)");
+assert.equal(env.maxTimers(), 1);
+assert.equal(listenerCount(), originalListeners, "stages and return do not add event listeners");
+assert.equal(env.piece.captures.size, 0);
+assert.ok(!/setInterval|requestAnimationFrame|createElement|localStorage|sessionStorage|fetch\(|XMLHttpRequest|AudioContext|new Audio/.test(source));
+console.log("APP-013 one-shape/one-animal deterministic regression: PASS (300 stages, single timer, lifecycle, input ownership)");
