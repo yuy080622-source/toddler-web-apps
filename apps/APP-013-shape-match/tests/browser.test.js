@@ -233,7 +233,9 @@ async function checkLayout(page, width, height) {
     for (const phase of ["completing", "transitioning"]) {
       await autoSnap(page);
       await page.waitForFunction((value) => document.querySelector("#board").dataset.state === value, phase);
-      await page.goto(new URL("README.md", base).href);
+      // A second document of this app keeps the BFCache check self-contained.
+      // Navigating to plain Markdown can request the site's unrelated favicon.
+      await page.goto(new URL("?bfcache-check=away", base).href);
       await page.goBack({ waitUntil: "commit" });
       await page.waitForFunction(() => Boolean(document.querySelector("#board")));
       const back = await inspect(page);
@@ -242,7 +244,7 @@ async function checkLayout(page, width, height) {
       assert.equal(back.timers, 0);
       assert.equal(back.placed, 0);
       assert.equal(back.complete, false);
-      assert.ok(back.lifecycle.some((e) => e.type === "pageshow" && e.persisted), "actual BFCache restores document");
+      assert.deepEqual(back.lifecycle.at(-1), { type: "pageshow", persisted: true }, "actual BFCache restores document");
     }
     console.log("PASS actual BFCache during snap and fade: pageshow.persisted=true, timers/partial completion cleared");
 

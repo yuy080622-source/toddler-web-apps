@@ -82,4 +82,7 @@ CHROMIUM_PATHでブラウザのパス、APP013_BASE_URLで検証先、APP013_ART
 - Chromiumのpointerup前吸着、全3動物の実アニメーション・完成・フェード・循環、実タッチの2指所有権、cancel／capture喪失、100回高速入力、resize・回転、visibilitychange相当、実BFCache（pageshow.persisted=true）、reduced-motion、キーボード：PASS。
 - 実時間180.6秒／96ステージ：PASS。DOM64固定、タイマー最大1本・待機時0本、二重進行なし、外部通信なし、console error／warningなし。
 - 全18 JavaScript構文、git diff --check、既存ポータル5カード＋APP-002／003／004／006／010／011の3サイズスモーク回帰：PASS。既存分析通信は検証時のみローカルスタブ化。既存公開コードとConoHa workflowは変更なし。
+- Pages：実装commit `3f1546a991216cd23661959bcbbda18c45b4a036`の[run 37745805611](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37745805611)はbuild／deployともsuccess。公開HTML／CSS／JSと必須4文書はHTTP 200、mainとSHA-256一致。
+- TLS検証つきHTTPSで取得したPages版をローカル配信し、3サイズ・全動物・実タッチ・実BFCache・reduced-motion等のブラウザ回帰をPASS。公開HTTPS URLへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）のため確認できていません。証明書検証・信頼設定は変更していません。
+- BFCacheテストの移動先は同じアプリの別query URLとし、無関係なMarkdownページのfavicon要求を避けています。mainへのGit commit／pushは成功し、main／origin/mainを同期しています。
 - iPhone／Androidの実際の複数指、safe area、回転・中断復帰、刺激量、発熱、幼児の操作感は実機確認待ちです。

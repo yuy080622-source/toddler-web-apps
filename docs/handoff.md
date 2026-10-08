@@ -22,6 +22,10 @@
 - Chromium指定3サイズ、全3動物の実アニメーション・完成・フェード・循環、pointerup前吸着、範囲外戻り、実2指所有権、cancel／capture喪失、100回高速入力、resize・回転、visibilitychange相当、実BFCache（pageshow.persisted=true）、reduced-motion、キーボードをPASS
 - 実時間180.6秒／96ステージでDOM64固定、タイマー最大1本・待機時0本、二重進行なし、外部通信なし、console error／warningなし
 - 既存ポータル5カード＋APP-002／003／004／006／010／011の3サイズスモーク回帰をPASS。既存分析は検証時のみスタブ化。公開コード・共通ファイル・ConoHa workflowは変更なし
+- 実装commit `3f1546a991216cd23661959bcbbda18c45b4a036`の[Pages run 37745805611](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37745805611)はbuild／deployともsuccess。公開HTML／CSS／JSと必須4文書はHTTP 200、mainとSHA-256一致
+- TLS検証つきHTTPSで取得したPages版をローカル配信し、指定3サイズ・全動物・実タッチ・実BFCache・reduced-motion等を回帰PASS。公開HTTPS URLへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）のため確認不可。証明書検証・信頼設定は変更なし
+- BFCacheテストの移動先は同じアプリの別query URL。復帰ごとにpageshow.persisted=trueを確認し、無関係なMarkdownページのfavicon要求を回避
+- mainへのGit commit／push成功、main／origin/mainを同期。試作URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-013-shape-match/`
 - 次はiPhone Safariで1歳児の「持つ→近づける→完成」をPMが判定。正式公開は実機承認後の別工程
 
 Repositoryルートの共通ポータルはiPhone実機確認PASS・正式採用済みで、APP-002／003／004／006／010の5本を表示する。各アプリには約2秒長押しでポータルへ戻る共通ホーム導線を追加済み。

@@ -17,6 +17,10 @@
 - Chromium指定3サイズ、全動物の完成・実アニメーション・固定循環、pointerup前の広い吸着、戻り、実2指タッチ所有権、cancel／capture喪失、100回高速入力、resize・回転、visibilitychange相当、実BFCache、reduced-motion・キーボードをPASS
 - 実時間180.6秒／96ステージでDOM64固定、タイマー最大1本・待機時0本、二重進行なし、外部通信なし、console error／warningなし
 - 既存ポータル＋APP-002／003／004／006／010／011の3サイズスモーク回帰もPASS。既存分析通信は検証時のみスタブ化、公開コード・ConoHa workflowに変更なし
+- 実装commit `3f1546a991216cd23661959bcbbda18c45b4a036`のPages run `37745805611`はbuild／deployともsuccess。公開HTML／CSS／JSと必須4文書はHTTP 200、mainとSHA-256一致
+- TLS検証つきHTTPSで取得したPages版をローカル配信し、3サイズ・全動物・実タッチ・実BFCache・reduced-motion等を回帰PASS。公開URLへのChromium直接接続は環境CA未信頼で確認不可。証明書検証・信頼設定は変更なし
+- BFCacheテストの移動先を同じアプリの別query URLに整理し、Markdownページの無関係なfavicon要求を回避。復帰ごとにpageshow.persisted=trueを確認
+- mainへのGit commit／push成功、main／origin/mainを同期。iPhone実機・PM承認は待ち
 
 ## 2026-10-02 — かたちポン！MVP試作
 
