@@ -28,6 +28,10 @@ class Target {
     if (!this.listeners.has(type)) this.listeners.set(type, []);
     this.listeners.get(type).push(callback);
   }
+  get offsetWidth() { return parseFloat(this.style.width) || this._width; }
+  set offsetWidth(value) { this._width = value; }
+  get offsetHeight() { return parseFloat(this.style.height) || this._height; }
+  set offsetHeight(value) { this._height = value; }
   dispatch(type, event = {}) {
     const input = { button: 0, pointerId: 1, preventDefault() {}, ...event };
     (this.listeners.get(type) || []).forEach((callback) => callback(input));
@@ -59,11 +63,12 @@ function environment(reduced = false) {
   const status = { textContent: "" };
   const piece = new Target();
   const target = new Target(304, 198);
-  const shapes = ["circle", "square", "triangle"].map(() => new Target());
-  const animals = ["turtle", "dog", "fox"].map(() => new Target());
-  const ids = { board, status, piece, target };
-  ["circle", "square", "triangle"].forEach((shape, i) => { ids["shape-" + shape] = shapes[i]; });
-  ["turtle", "dog", "fox"].forEach((animal, i) => { ids["animal-" + animal] = animals[i]; });
+  const shapes = ["circle", "rectangle", "egg", "triangle", "diamond"].map(() => new Target());
+  const animals = ["turtle", "dog", "chick", "fox", "fish"].map(() => new Target());
+  const ids = { board, status, piece, target, features: new Target(), "piece-svg": new Target() };
+  ["circle", "rectangle", "egg", "triangle", "diamond"].forEach((shape, i) => { ids["shape-" + shape] = shapes[i]; });
+  ["turtle", "dog", "chick", "fox", "fish"].forEach((animal, i) => { ids["animal-" + animal] = animals[i]; });
+  ["turtle", "dog", "chick", "fox", "fish"].forEach((animal) => { ids["details-" + animal] = new Target(); });
   let width = 366;
   let height = 820;
   let now = 0;
@@ -178,17 +183,27 @@ assert.equal(env.timers.size, 1);
 env.advance(219);
 checkStage(env, "circle", "turtle");
 env.advance(1);
-checkStage(env, "square", "dog");
+checkStage(env, "rectangle", "dog");
 assert.equal(env.board.dataset.state, "idle");
 assert.equal(env.timers.size, 0);
 env.approach();
 env.advance(180);
 assert.equal(env.status.textContent, "いぬができた");
 env.advance(1620);
+checkStage(env, "egg", "chick");
+env.approach();
+env.advance(180);
+assert.equal(env.status.textContent, "ひよこができた");
+env.advance(1620);
 checkStage(env, "triangle", "fox");
 env.approach();
 env.advance(180);
 assert.equal(env.status.textContent, "きつねができた");
+env.advance(1620);
+checkStage(env, "diamond", "fish");
+env.approach();
+env.advance(180);
+assert.equal(env.status.textContent, "さかなができた");
 env.advance(1620);
 checkStage(env, "circle", "turtle");
 
@@ -203,7 +218,7 @@ assert.equal(env.piece.hasPointerCapture(10), true);
 env.piece.dispatch("pointermove", { pointerId: 10, ...env.point(env.target) });
 assert.equal(env.board.dataset.state, "completing");
 env.advance(1800);
-checkStage(env, "square", "dog");
+checkStage(env, "rectangle", "dog");
 
 // Outside drops and capture cancellation are neutral and immediately reusable.
 for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
@@ -219,6 +234,7 @@ for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
 }
 
 // Interrupt every phase and ensure old callbacks cannot revive a half-complete animal.
+for (let stage = 0; stage < 5; stage++) {
 for (const phase of ["dragging", "snapping", "reward", "transitioning"]) {
   for (const event of ["visibilitychange", "pagehide"]) {
     const current = env.board.dataset.animal;
@@ -241,6 +257,9 @@ for (const phase of ["dragging", "snapping", "reward", "transitioning"]) {
     env.window.dispatch("pageshow", { persisted: true });
     assert.equal(env.board.dataset.state, "idle");
   }
+}
+env.approach();
+env.advance(1800);
 }
 
 for (const [w, h, size] of [[390,844,140],[844,390,140],[1024,768,150]]) {
@@ -268,11 +287,11 @@ assert.equal(reduced.status.textContent, "");
 reduced.advance(1);
 assert.equal(reduced.status.textContent, "かめができた");
 reduced.advance(1520);
-checkStage(reduced, "square", "dog");
+checkStage(reduced, "rectangle", "dog");
 reduced.piece.dispatch("keydown", { key: " " });
 assert.equal(reduced.board.dataset.state, "completing");
 reduced.advance(1580);
-checkStage(reduced, "triangle", "fox");
+checkStage(reduced, "egg", "chick");
 reduced.piece.dispatch("click", { detail: 1 });
 assert.equal(reduced.board.dataset.state, "idle", "ordinary click is not a shortcut");
 reduced.piece.dispatch("click", { detail: 0 });
@@ -283,6 +302,21 @@ assert.equal(reduced.board.dataset.state, "idle");
 assert.equal(reduced.timers.size, 0);
 
 // 300 stages / 540 seconds on the deterministic clock, with repeated BFCache return.
+for (let stage = 0; stage < 5; stage++) {
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    env.start(99);
+    env.piece.dispatch("pointerdown", { pointerId: 100, ...env.point(env.piece) });
+    env.piece.dispatch("pointermove", { pointerId: 100, ...env.point(env.target) });
+    assert.equal(env.board.dataset.state, "dragging");
+    env.piece.dispatch(type, { pointerId: 99, clientX: 350, clientY: 820 });
+    assert.equal(env.board.dataset.state, "idle");
+    assert.equal(env.timers.size, 0);
+  }
+  env.approach();
+  for (let i = 0; i < 100; i++) env.piece.dispatch("keydown", { key: "Enter" });
+  assert.equal(env.timers.size, 1);
+  env.advance(1800);
+}
 env.resize(390, 844);
 for (let i = 0; i < 300; i++) {
   env.approach();

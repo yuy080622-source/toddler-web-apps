@@ -6,76 +6,126 @@
   <meta name="theme-color" content="#faf8f1">
   <title>かたちポン！</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=20261008-animal">
-  <script src="app.js?v=20261008-animal" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20261008-five">
+  <script src="app.js?v=20261008-five" defer></script>
 </head>
 <body>
+  <!-- One definition per shape: both the hole and the persistent piece reference it. -->
+  <svg class="shape-definitions" aria-hidden="true" width="0" height="0">
+    <defs>
+      <circle id="form-circle" r="50"/>
+      <rect id="form-rectangle" x="-68" y="-42" width="136" height="84" rx="18"/>
+      <ellipse id="form-egg" rx="43" ry="56"/>
+      <path id="form-triangle" d="M-43 -46 Q-54 -46 -49 -35 L-10 43 Q0 60 10 43 L49 -35 Q54 -46 43 -46 Z"/>
+      <path id="form-diamond" d="M-7 -43 Q0 -49 7 -43 L54 -7 Q63 0 54 7 L7 43 Q0 49 -7 43 L-54 7 Q-63 0 -54 -7 Z"/>
+    </defs>
+  </svg>
   <main aria-label="かたちポン！">
     <div id="board" aria-label="形あそび">
       <div id="target" class="target" role="img" aria-label="かめのまるい甲羅の型">
-        <svg viewBox="-100 -65 200 130" aria-hidden="true">
+        <svg viewBox="-120 -78 240 156" aria-hidden="true">
           <g id="animal-turtle" class="animal-scene">
             <g class="animal-surround">
-              <path class="animal-part" d="M-46 -4 Q-67 -15 -77 -1 Q-62 9 -46 8 Z"/>
-              <ellipse class="animal-part" cx="-30" cy="-42" rx="13" ry="15" transform="rotate(-24 -30 -42)"/>
-              <ellipse class="animal-part" cx="29" cy="-42" rx="13" ry="15" transform="rotate(24 29 -42)"/>
-              <ellipse class="animal-part" cx="-30" cy="42" rx="13" ry="15" transform="rotate(24 -30 42)"/>
-              <ellipse class="animal-part" cx="29" cy="42" rx="13" ry="15" transform="rotate(-24 29 42)"/>
+              <path class="animal-part" d="M-45 -6 Q-65 -16 -77 -2 Q-66 9 -45 8 Z"/>
+              <ellipse class="animal-part" cx="-31" cy="-43" rx="14" ry="15" transform="rotate(-25 -31 -43)"/>
+              <ellipse class="animal-part" cx="30" cy="-43" rx="14" ry="15" transform="rotate(25 30 -43)"/>
+              <ellipse class="animal-part" cx="-31" cy="43" rx="14" ry="15" transform="rotate(25 -31 43)"/>
+              <ellipse class="animal-part" cx="30" cy="43" rx="14" ry="15" transform="rotate(-25 30 43)"/>
               <g class="turtle-head">
-                <ellipse class="animal-part" cx="65" cy="-1" rx="28" ry="23"/>
-                <circle class="eye" cx="72" cy="-9" r="2.8"/>
-                <path class="face-line" d="M77 4 Q81 8 86 3"/>
+                <path class="animal-part" d="M40 -16 H65 C105 -39 110 33 70 24 L40 16 Z"/>
+                <ellipse class="cream" cx="83" cy="10" rx="14" ry="9"/>
+                <circle class="eye" cx="84" cy="-7" r="3"/>
+                <path class="face-line" d="M87 8 Q92 13 98 8"/>
+                <ellipse class="blush" cx="78" cy="7" rx="5" ry="3"/>
               </g>
             </g>
-            <circle class="socket" cx="0" cy="0" r="48"/>
-            <g class="animal-details shell-lines">
-              <path d="M-19 -42 Q-3 0 -19 42 M19 -42 Q3 0 19 42 M-43 -20 Q0 -4 43 -20 M-43 20 Q0 4 43 20"/>
-            </g>
+            <use class="socket" href="#form-circle"/>
+
           </g>
           <g id="animal-dog" class="animal-scene" hidden>
             <g class="animal-surround">
-              <path class="dog-tail animal-part" d="M-47 -9 Q-80 -40 -84 -17 Q-81 -9 -72 -15 Q-63 -12 -47 0 Z"/>
-              <path class="animal-part" d="M-37 42 V55 Q-37 62 -28 62 H-17 Q-13 62 -15 56 L-18 42 Z"/>
-              <path class="animal-part" d="M18 42 V55 Q18 62 27 62 H38 Q42 62 40 56 L37 42 Z"/>
-              <rect class="animal-part" x="42" y="-51" width="49" height="50" rx="20"/>
-              <path class="animal-part ear" d="M47 -47 Q38 -48 35 -33 L38 -17 Q48 -12 53 -28 Z"/>
-              <ellipse class="cream" cx="79" cy="-12" rx="15" ry="11"/>
-              <circle class="eye" cx="73" cy="-31" r="2.8"/>
-              <ellipse class="eye" cx="90" cy="-15" rx="4" ry="3.5"/>
-              <path class="face-line" d="M77 -9 Q82 -5 86 -9"/>
+              <path class="dog-tail animal-part" d="M-61 6 Q-90 -7 -99 -36 Q-102 -49 -94 -50 Q-85 -51 -86 -38 Q-79 -20 -59 -13 Z"/>
+              <path class="animal-part" d="M-49 34 L-50 61 Q-52 72 -38 72 H-28 Q-17 72 -24 62 L-25 34 Z"/>
+              <path class="animal-part" d="M31 34 L31 61 Q29 72 43 72 H53 Q65 72 57 62 L55 34 Z"/>
+              <path class="animal-part dog-neck" d="M48 -29 Q59 -46 72 -35 L80 6 L57 21 Z"/>
+              <path class="animal-part" d="M62 -49 Q92 -66 107 -42 Q114 -29 106 -14 Q113 7 90 9 Q62 8 57 -16 Z"/>
+              <path class="ear animal-part" d="M67 -47 Q53 -46 52 -27 Q52 -10 64 -8 Q73 -9 72 -25 L76 -42 Z"/>
+              <ellipse class="cream" cx="94" cy="-5" rx="18" ry="12"/>
+              <circle class="eye" cx="91" cy="-29" r="3"/>
+              <ellipse class="eye" cx="109" cy="-12" rx="5" ry="4"/>
+              <path class="face-line" d="M93 -1 Q98 5 104 0"/>
+              <ellipse class="blush" cx="85" cy="-9" rx="5" ry="3"/>
             </g>
-            <rect class="socket" x="-48" y="-48" width="96" height="96" rx="10"/>
+            <use class="socket" href="#form-rectangle"/>
+          </g>
+          <g id="animal-chick" class="animal-scene" hidden>
+            <g class="animal-surround">
+              <path class="animal-part" d="M-29 -4 Q-66 -12 -61 14 Q-54 36 -31 27 Z"/>
+              <path class="animal-part" d="M29 -4 Q66 -12 61 14 Q54 36 31 27 Z"/>
+              <path class="feet" d="M-16 47 V66 M-16 65 L-27 70 M-16 65 L-6 70 M16 47 V66 M16 65 L6 70 M16 65 L27 70"/>
+              <path class="animal-part" d="M-10 -47 Q-18 -69 -8 -70 Q0 -70 3 -50 Q10 -68 17 -63 Q23 -58 12 -45 Z"/>
+            </g>
+            <use class="socket" href="#form-egg"/>
+
           </g>
           <g id="animal-fox" class="animal-scene" hidden>
             <g class="animal-surround">
-              <path class="animal-part" d="M-20 37 Q-28 60 -10 62 H14 Q33 55 21 34 Z"/>
-              <path class="animal-part" d="M17 44 Q61 59 77 32 Q82 13 61 7 Q63 35 17 32 Z"/>
-              <path class="cream" d="M63 8 Q80 9 78 25 L67 33 Q71 15 63 8 Z"/>
+              <path class="animal-part" d="M12 37 Q51 49 65 26 Q68 14 79 17 Q101 27 81 52 Q56 74 18 64 Z"/>
+              <path class="cream" d="M66 24 Q69 12 79 18 Q91 22 88 33 Q80 42 69 39 Z"/>
+              <path class="animal-part" d="M-15 28 Q-37 38 -30 58 Q-30 71 -17 71 H20 Q32 70 30 55 Q32 38 15 28 Z"/>
+              <path class="cream" d="M-9 38 Q0 34 9 38 L16 60 Q0 69 -16 60 Z"/>
               <g class="fox-ear fox-ear-left">
-                <path class="animal-part" d="M-49 -39 L-51 -61 Q-51 -64 -47 -62 L-24 -43 Z"/>
-                <path class="cream" d="M-44 -43 L-46 -54 L-33 -44 Z"/>
+                <path class="animal-part" d="M-48 -36 Q-57 -69 -47 -69 Q-39 -69 -26 -39 Z"/>
+                <path class="cream" d="M-44 -43 Q-48 -59 -45 -59 L-35 -42 Z"/>
               </g>
               <g class="fox-ear fox-ear-right">
-                <path class="animal-part" d="M24 -43 L47 -62 Q51 -64 51 -61 L49 -39 Z"/>
-                <path class="cream" d="M33 -44 L46 -54 L44 -43 Z"/>
+                <path class="animal-part" d="M26 -39 Q39 -69 47 -69 Q57 -69 48 -36 Z"/>
+                <path class="cream" d="M35 -42 L45 -59 Q48 -59 44 -43 Z"/>
               </g>
             </g>
-            <path class="socket" d="M-48 -46 H48 L0 48 Z"/>
-            <g class="animal-details">
-              <path class="cream" d="M-43 -28 Q-8 -19 0 35 L-21 4 Z M43 -28 Q8 -19 0 35 L21 4 Z"/>
-              <circle class="eye" cx="-18" cy="-14" r="3"/>
-              <circle class="eye" cx="18" cy="-14" r="3"/>
-              <path class="eye" d="M-5 33 Q0 30 5 33 L0 40 Z"/>
+            <use class="socket" href="#form-triangle"/>
+
+          </g>
+          <g id="animal-fish" class="animal-scene" hidden>
+            <g class="animal-surround">
+              <path class="fish-tail animal-part" d="M-45 -3 Q-70 -9 -85 -27 Q-94 -33 -94 -20 Q-88 0 -94 20 Q-94 33 -85 27 Q-70 9 -45 3 Z"/>
+              <path class="animal-part" d="M-16 -32 Q-20 -59 -9 -56 Q5 -53 19 -32 Z"/>
+              <path class="animal-part" d="M-16 32 Q-20 59 -9 56 Q5 53 19 32 Z"/>
             </g>
+            <use class="socket" href="#form-diamond"/>
+
           </g>
         </svg>
       </div>
+      <div id="features" class="features" aria-hidden="true"><svg viewBox="-120 -78 240 156"><g id="details-turtle" class="animal-details shell-lines">
+              <path d="M-17 -44 Q-2 0 -17 44 M17 -44 Q2 0 17 44 M-44 -18 Q0 -4 44 -18 M-44 18 Q0 4 44 18"/>
+            </g>
+<g id="details-dog" class="animal-details" hidden></g>
+<g id="details-chick" class="animal-details" hidden>
+              <circle class="eye" cx="-15" cy="-17" r="3.5"/><circle class="eye" cx="15" cy="-17" r="3.5"/>
+              <path class="beak" d="M-8 -6 Q0 -11 8 -6 Q0 6 -8 -6 Z"/>
+              <ellipse class="blush" cx="-24" cy="-5" rx="6" ry="4"/><ellipse class="blush" cx="24" cy="-5" rx="6" ry="4"/>
+            </g>
+<g id="details-fox" class="animal-details" hidden>
+              <path class="cream" d="M-45 -28 Q-22 -28 -4 31 Q0 42 -12 33 L-38 -15 Q-43 -21 -45 -28 Z M45 -28 Q22 -28 4 31 Q0 42 12 33 L38 -15 Q43 -21 45 -28 Z"/>
+              <circle class="eye" cx="-18" cy="-16" r="3.2"/><circle class="eye" cx="18" cy="-16" r="3.2"/>
+              <ellipse class="eye" cx="0" cy="36" rx="5" ry="4"/>
+              <ellipse class="blush" cx="-27" cy="-6" rx="5" ry="3"/><ellipse class="blush" cx="27" cy="-6" rx="5" ry="3"/>
+            </g>
+<g id="details-fish" class="animal-details" hidden>
+              <path class="fin-line" d="M-16 -14 Q-1 0 -16 14 M-30 -11 Q-17 0 -30 11"/>
+              <circle class="eye" cx="29" cy="-8" r="3.5"/>
+              <path class="face-line" d="M36 7 Q42 12 47 5"/>
+              <ellipse class="blush" cx="27" cy="6" rx="5" ry="3"/>
+            </g></svg></div>
       <button id="piece" class="piece" type="button" aria-label="まるをかめの甲羅へ" aria-disabled="false">
         <span class="piece-art">
-          <svg viewBox="-50 -50 100 100" aria-hidden="true">
-            <circle id="shape-circle" cx="0" cy="0" r="48"/>
-            <rect id="shape-square" x="-48" y="-48" width="96" height="96" rx="10" hidden/>
-            <path id="shape-triangle" d="M-48 -46 H48 L0 48 Z" hidden/>
+          <svg id="piece-svg" viewBox="-52 -52 104 104" aria-hidden="true">
+            <use id="shape-circle" href="#form-circle"/>
+            <use id="shape-rectangle" href="#form-rectangle" hidden/>
+            <use id="shape-egg" href="#form-egg" hidden/>
+            <use id="shape-triangle" href="#form-triangle" hidden/>
+            <use id="shape-diamond" href="#form-diamond" hidden/>
           </svg>
         </span>
       </button>

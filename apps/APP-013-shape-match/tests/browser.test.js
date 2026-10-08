@@ -8,9 +8,9 @@ const base = process.env.APP013_BASE_URL || "http://127.0.0.1:8000/apps/APP-013-
 const longSeconds = Number(process.env.APP013_LONG_SECONDS || 0);
 const output = process.env.APP013_ARTIFACT_DIR || "/tmp/app013-verification";
 fs.mkdirSync(output, { recursive: true });
-const animals = ["turtle", "dog", "fox"];
-const shapes = ["circle", "square", "triangle"];
-const animationPart = [".turtle-head", ".dog-tail", ".fox-ear-left"];
+const animals = ["turtle", "dog", "chick", "fox", "fish"];
+const shapes = ["circle", "rectangle", "egg", "triangle", "diamond"];
+const animationPart = [".turtle-head", ".dog-tail", "#target > svg", ".fox-ear-left", ".fish-tail"];
 
 async function inspect(page) {
   return page.evaluate(() => ({
@@ -63,7 +63,7 @@ async function checkLayout(page, width, height) {
   const rects = await page.locator(".piece, .target").evaluateAll((es) => es.map((e) => e.getBoundingClientRect().toJSON()));
   rects.forEach((r) => assert.ok(r.left >= 11 && r.top >= 11 && r.right <= width - 11 && r.bottom <= height - 11, "inside safe content area"));
   const [target, piece] = rects;
-  assert.ok(piece.width >= 120 && piece.width <= 150, "large 120–150px piece");
+  assert.ok(Math.min(piece.width, piece.height) >= 118, "large shape-specific touch area");
   assert.ok(target.bottom < piece.top, "animal and piece do not overlap");
   return piece.width;
 }
@@ -121,19 +121,43 @@ async function checkLayout(page, width, height) {
       await page.waitForTimeout(300);
       const returned = await point(page, "#piece");
       assert.ok(Math.hypot(returned.x - home.x, returned.y - home.y) < 1, "outside magnet returns home");
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < animals.length; i++) {
         assert.equal((await inspect(page)).animal, animals[i]);
         assert.equal((await inspect(page)).shape, shapes[i]);
         await checkLayout(page, width, height);
+        await page.waitForTimeout(200); // Capture the stable stage, after its entrance fade.
         await page.screenshot({ path: output + "/" + width + "x" + height + "-" + animals[i] + "-before.png" });
+        const stageHome = await point(page, "#piece");
+        await page.mouse.move(stageHome.x, stageHome.y);
+        await page.mouse.down();
+        await page.mouse.move(stageHome.x + 20, stageHome.y + 5);
+        await page.mouse.up();
+        await page.waitForTimeout(300);
+        assert.equal((await inspect(page)).placed, 0, "every shape returns neutrally outside the magnet");
+        const returnedHome = await point(page, "#piece");
+        assert.ok(Math.hypot(returnedHome.x - stageHome.x, returnedHome.y - stageHome.y) < 0.7);
+        await touch(cdp, "touchStart", [{ ...stageHome, id: 17 }]);
+        await touch(cdp, "touchCancel", []);
+        await waitIdle(page, animals[i]);
+        assert.equal((await inspect(page)).placed, 0, "every shape handles trusted pointercancel");
+        await page.waitForTimeout(300);
         // 130px is outside the visible hole and inside the broad responsive magnet.
         await autoSnap(page, 130);
         await page.waitForFunction(() => document.querySelector("#board").classList.contains("is-complete"));
-        const completed = await page.locator("#animal-" + animals[i]).evaluate((e) => ({
-          surround: getComputedStyle(e.querySelector(".animal-surround")).opacity,
-          animation: getComputedStyle(e.querySelector(".turtle-head, .dog-tail, .fox-ear-left")).animationName,
-          iterations: getComputedStyle(e.querySelector(".turtle-head, .dog-tail, .fox-ear-left")).animationIterationCount
+        const completed = await page.locator(animationPart[i]).evaluate((e) => ({
+          animation: getComputedStyle(e).animationName,
+          iterations: getComputedStyle(e).animationIterationCount
         }));
+        assert.equal(await page.locator("#piece").evaluate((e) => getComputedStyle(e).opacity), "1", "the same piece remains visible as the animal body");
+        const alignment = await page.evaluate(() => {
+          const hole = document.querySelector(".animal-scene:not([hidden]) .socket");
+          const part = document.querySelector(".piece use:not([hidden])");
+          const a = hole.getBoundingClientRect(), b = part.getBoundingClientRect();
+          return { href: [hole.getAttribute("href"), part.getAttribute("href")],
+            difference: [a.width - b.width, a.height - b.height, a.x - b.x, a.y - b.y] };
+        });
+        assert.equal(alignment.href[0], alignment.href[1], "one shared definition for hole and piece");
+        alignment.difference.forEach((v) => assert.ok(Math.abs(v) < 0.7, "identical rendered contour, size and placement"));
         await page.waitForTimeout(380);
         assert.equal(await page.locator("#animal-" + animals[i] + " .animal-surround").evaluate((e) => getComputedStyle(e).opacity), "1");
         assert.notEqual(completed.animation, "none");
@@ -141,15 +165,26 @@ async function checkLayout(page, width, height) {
         const transform = await page.locator(animationPart[i]).evaluate((e) => getComputedStyle(e).transform);
         assert.notEqual(transform, "none", "completed animal actually moves");
         assert.notEqual(transform, "matrix(1, 0, 0, 1, 0, 0)");
+        if (animals[i] === "chick" || animals[i] === "fish") {
+          const deltas = await page.evaluate(() => {
+            const a = document.querySelector(".animal-scene:not([hidden]) .socket").getBoundingClientRect();
+            const b = document.querySelector(".piece use:not([hidden])").getBoundingClientRect();
+            return [a.x - b.x, a.y - b.y, a.width - b.width, a.height - b.height];
+          });
+          deltas.forEach((v) => assert.ok(Math.abs(v) < 0.7, "body stays aligned with animal throughout hop/swim"));
+          const sameMotion = await page.locator("#target > svg").evaluate((e) =>
+            getComputedStyle(e).transform === getComputedStyle(document.querySelector("#features > svg")).transform);
+          assert.ok(sameMotion, "face and body move together");
+        }
         await page.screenshot({ path: output + "/" + width + "x" + height + "-" + animals[i] + "-complete.png" });
         assert.equal((await inspect(page)).timers, 1);
         await page.waitForFunction(() => document.querySelector("#board").dataset.state === "transitioning");
-        await waitIdle(page, animals[(i + 1) % 3]);
+        await waitIdle(page, animals[(i + 1) % animals.length]);
         assert.equal((await inspect(page)).dom, initial.dom);
         assert.equal((await inspect(page)).timers, 0);
       }
       sizes.push({ width, height, pieceSize, dom: initial.dom, scroll: initial.scroll });
-      console.log("PASS " + width + "x" + height + ": one shape/animal, broad auto snap, 3 rewards, fades, cycle; DOM " + initial.dom);
+      console.log("PASS " + width + "x" + height + ": one shape/animal, broad auto snap, 5 rewards, fades, cycle; DOM " + initial.dom);
     }
 
     await page.setViewportSize({ width: 390, height: 844 });
@@ -249,24 +284,24 @@ async function checkLayout(page, width, height) {
     console.log("PASS actual BFCache during snap and fade: pageshow.persisted=true, timers/partial completion cleared");
 
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < animals.length; i++) {
       const animal = (await inspect(page)).animal;
       await autoSnap(page);
       await page.waitForFunction(() => document.querySelector("#board").classList.contains("is-complete"));
       const reduced = await page.locator("#animal-" + animal).evaluate((e) => ({
-        animation: getComputedStyle(e.querySelector(".turtle-head, .dog-tail, .fox-ear-left")).animationName,
+        animation: getComputedStyle(e.querySelector(".turtle-head, .dog-tail, .fox-ear-left, .fish-tail") || document.querySelector("#target > svg")).animationName,
         snap: getComputedStyle(document.querySelector("#piece")).transitionDuration,
         fade: getComputedStyle(document.querySelector("#target")).transitionDuration
       }));
       assert.deepEqual(reduced, { animation: "none", snap: "0.06s", fade: "0.12s" });
-      await waitIdle(page, animals[(animals.indexOf(animal) + 1) % 3]);
+      await waitIdle(page, animals[(animals.indexOf(animal) + 1) % animals.length]);
     }
     await page.locator("#piece").focus();
     await page.keyboard.press("Enter");
-    await waitIdle(page, "fox");
+    await waitIdle(page, "chick");
     await page.locator("#piece").focus();
     await page.keyboard.press("Space");
-    await waitIdle(page, "turtle");
+    await waitIdle(page, "fox");
     console.log("PASS reduced motion: all animal motions off, 60ms snap/return, 120ms fade; completion/cycle and keyboard retained");
 
     let longRun = null;
@@ -287,7 +322,7 @@ async function checkLayout(page, width, height) {
         assert.equal(active.dom, initial.dom);
         assert.equal(active.timers, 1);
         await touch(cdp, "touchEnd", []);
-        await waitIdle(page, animals[(stages + 1) % 3]);
+        await waitIdle(page, animals[(stages + 1) % animals.length]);
         const idle = await inspect(page);
         assert.equal(idle.dom, initial.dom);
         assert.equal(idle.timers, 0);

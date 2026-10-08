@@ -1,7 +1,5 @@
 :root {
   color-scheme: light;
-  --piece-size: clamp(120px, 36vmin, 150px);
-  --socket-size: calc(var(--piece-size) + 12px);
   background: #faf8f1;
   font-family: system-ui, sans-serif;
 }
@@ -24,33 +22,37 @@ main {
   margin-inline: auto;
   touch-action: none;
 }
-#board[data-shape="circle"] { --color: #82b397; --outline: #56816a; --tint: #e0eee4; --part: #a8c6a1; }
-#board[data-shape="square"] { --color: #d5ad7f; --outline: #987451; --tint: #f1e7d9; --part: #d5ad7f; }
-#board[data-shape="triangle"] { --color: #e7a06d; --outline: #b37851; --tint: #f6e7da; --part: #e7a06d; }
-.target, .piece { position: absolute; left: 0; top: 0; }
+#board[data-shape="circle"] { --color: #a3c498; --outline: #6f8d69; --part: #bed2a9; }
+#board[data-shape="rectangle"] { --color: #dcb68d; --outline: #a58669; --part: #dcb68d; }
+#board[data-shape="egg"] { --color: #efd68a; --outline: #b99c60; --part: #efd68a; }
+#board[data-shape="triangle"] { --color: #e5ac80; --outline: #ae8264; --part: #e5ac80; }
+#board[data-shape="diamond"] { --color: #9ec9cc; --outline: #719da2; --part: #9ec9cc; }
+.shape-definitions { position: absolute; overflow: hidden; pointer-events: none; }
+.target, .piece, .features { position: absolute; left: 0; top: 0; }
+.features { pointer-events: none; z-index: 3; transition: opacity 220ms ease-out; }
+.dog-neck { stroke: none; }
 .target {
-  width: calc(var(--socket-size) * 2);
-  height: calc(var(--socket-size) * 1.3);
   pointer-events: none;
   transition: opacity 220ms ease-out;
   z-index: 1;
 }
 svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.animal-part { fill: var(--part); stroke: var(--outline); stroke-width: 1.3; stroke-linejoin: round; }
+.animal-part { fill: var(--part); stroke: var(--outline); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 .cream { fill: #fff5df; }
 .eye { fill: #594b40; }
 .face-line { fill: none; stroke: #594b40; stroke-width: 1.6; stroke-linecap: round; }
+.blush { fill: #dfa18a; opacity: .5; }
+.beak { fill: #dba16f; }
+.feet { fill: none; stroke: #d0a070; stroke-width: 4; stroke-linecap: round; }
+.fin-line { fill: none; stroke: var(--outline); stroke-width: 1.5; stroke-linecap: round; }
 .animal-surround { opacity: .27; transition: opacity 180ms ease-out; }
 .animal-details { opacity: 0; transition: opacity 180ms ease-out; }
-.socket { fill: var(--tint); stroke: var(--outline); stroke-width: 2; stroke-linejoin: round; transition: fill 180ms ease-out; }
+.socket { fill: #efe9dc; stroke: var(--outline); stroke-width: 1.5; stroke-linejoin: round; transition: fill 180ms ease-out, opacity 180ms ease-out; }
 .is-near .socket { fill: #fffaf0; }
 .shell-lines { fill: none; stroke: var(--outline); stroke-width: 1.5; opacity: 0; }
 .is-complete .animal-surround, .is-complete .animal-details { opacity: 1; }
-.is-complete .socket { fill: var(--color); }
-.is-complete .target { z-index: 3; }
+.is-complete .socket { opacity: 0; }
 .piece {
-  width: var(--piece-size);
-  height: var(--piece-size);
   padding: 0;
   border: 0;
   background: transparent;
@@ -58,39 +60,51 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
   touch-action: none;
   cursor: grab;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 180ms ease-out, opacity 120ms ease-out;
+  transition: transform 180ms cubic-bezier(.22, .7, .3, 1), opacity 220ms ease-out;
   z-index: 2;
 }
 .piece-art { display: block; width: 100%; height: 100%; transform-origin: center; }
 .piece svg { fill: var(--color); stroke: var(--outline); stroke-width: 1.5; stroke-linejoin: round; }
 .piece.is-dragging { transition: none; cursor: grabbing; }
-.piece.is-dragging .piece-art { transform: scale(1.025); }
 .piece.is-returning { transition-duration: 280ms; }
 .piece.is-placed { cursor: default; }
-.is-complete .piece { opacity: 0; }
-.is-transitioning .target, .is-transitioning .piece { opacity: 0; }
-.is-entering .target, .is-entering .piece { animation: stage-in 180ms ease-out 1; }
+.is-transitioning .target, .is-transitioning .piece, .is-transitioning .features { opacity: 0; }
+.is-entering .target, .is-entering .piece, .is-entering .features { animation: stage-in 180ms ease-out 1; }
 .piece:focus-visible { outline: 3px solid #536c76; outline-offset: 6px; border-radius: 12px; }
-#board.is-layout .piece, #board.is-layout .target, #board.is-layout svg * { transition: none; animation: none; }
-.is-complete .turtle-head { animation: turtle-peek 1000ms ease-in-out 120ms 1; }
-.dog-tail, .fox-ear { transform-box: fill-box; }
-.dog-tail { transform-origin: right bottom; }
+#board.is-layout .piece, #board.is-layout .target, #board.is-layout .features, #board.is-layout svg * { transition: none; animation: none; }
+.is-complete .turtle-head { animation: turtle-peek 1100ms ease-in-out 160ms 1; }
+.dog-tail, .fox-ear, .fish-tail { transform-box: fill-box; }
+.dog-tail { transform-origin: 94% 96%; }
 .fox-ear { transform-origin: center bottom; }
-.is-complete .dog-tail { animation: dog-wag 1000ms ease-in-out 120ms 1; }
-.is-complete .fox-ear-left { animation: fox-left 1000ms ease-in-out 120ms 1; }
-.is-complete .fox-ear-right { animation: fox-right 1000ms ease-in-out 120ms 1; }
+.fish-tail { transform-origin: right center; }
+.is-complete .dog-tail { animation: dog-wag 1100ms ease-in-out 160ms 1; }
+.is-complete .fox-ear-left { animation: fox-left 1100ms ease-in-out 160ms 1; }
+.is-complete .fox-ear-right { animation: fox-right 1100ms ease-in-out 160ms 1; }
+.is-complete[data-animal="chick"] .target > svg,
+.is-complete[data-animal="chick"] .features > svg,
+.is-complete[data-animal="chick"] .piece-art { animation: chick-hop 1100ms ease-in-out 160ms 1; }
+.is-complete[data-animal="fish"] .target > svg,
+.is-complete[data-animal="fish"] .features > svg,
+.is-complete[data-animal="fish"] .piece-art { animation: fish-swim 1100ms ease-in-out 160ms 1; }
+.is-complete .fish-tail { animation: fish-tail 1100ms ease-in-out 160ms 1; }
 @keyframes turtle-peek { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(3px); } }
-@keyframes dog-wag { 0%, 50%, 100% { transform: rotate(0); } 20%, 70% { transform: rotate(-12deg); } 35%, 85% { transform: rotate(8deg); } }
+@keyframes dog-wag { 0%, 50%, 100% { transform: rotate(0); } 20%, 70% { transform: rotate(-8deg); } 35%, 85% { transform: rotate(6deg); } }
 @keyframes fox-left { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(-7deg); } }
 @keyframes fox-right { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(7deg); } }
 @keyframes stage-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes chick-hop { 0%, 20%, 75%, 100% { transform: translateY(0); } 45% { transform: translateY(-6px); } }
+@keyframes fish-swim { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(8px); } }
+@keyframes fish-tail { 0%, 50%, 100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .piece, .piece.is-returning { transition-duration: 60ms; }
   .piece.is-dragging .piece-art { transform: none; }
-  .target { transition-duration: 120ms; }
+  .target, .features { transition-duration: 120ms; }
   .animal-surround, .animal-details, .socket { transition-duration: 60ms; }
-  .is-entering .target, .is-entering .piece { animation-duration: 120ms; }
+  .is-entering .target, .is-entering .piece, .is-entering .features { animation-duration: 120ms; }
   .is-complete .turtle-head, .is-complete .dog-tail,
-  .is-complete .fox-ear-left, .is-complete .fox-ear-right { animation: none; }
+  .is-complete .fox-ear-left, .is-complete .fox-ear-right, .is-complete .fish-tail,
+  .is-complete[data-animal="chick"] .target > svg, .is-complete[data-animal="chick"] .piece-art,
+  .is-complete[data-animal="fish"] .target > svg, .is-complete[data-animal="fish"] .piece-art { animation: none; }
+  .is-complete[data-animal="chick"] .features > svg, .is-complete[data-animal="fish"] .features > svg { animation: none; }
 }

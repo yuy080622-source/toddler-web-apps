@@ -3,11 +3,14 @@
 (() => {
   const board = document.getElementById("board");
   const status = document.getElementById("status");
+  const features = document.getElementById("features");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const stages = [
-    { shape: "circle", animal: "turtle", name: "かめ", label: "まるをかめの甲羅へ", targetLabel: "かめのまるい甲羅の型" },
-    { shape: "square", animal: "dog", name: "いぬ", label: "しかくをいぬの胴体へ", targetLabel: "いぬのしかくい胴体の型" },
-    { shape: "triangle", animal: "fox", name: "きつね", label: "さんかくをきつねの顔へ", targetLabel: "きつねのさんかくの顔の型" }
+    { shape: "circle", animal: "turtle", name: "かめ", box: [104, 104], label: "まるをかめの甲羅へ", targetLabel: "かめのまるい甲羅の型" },
+    { shape: "rectangle", animal: "dog", name: "いぬ", box: [144, 92], label: "ながしかくをいぬの胴体へ", targetLabel: "いぬの横長の胴体の型" },
+    { shape: "egg", animal: "chick", name: "ひよこ", box: [100, 120], label: "たまご形をひよこの胴体へ", targetLabel: "ひよこのたまご形の胴体の型" },
+    { shape: "triangle", animal: "fox", name: "きつね", box: [112, 112], label: "さんかくをきつねの顔へ", targetLabel: "きつねのまるいさんかくの顔の型" },
+    { shape: "diamond", animal: "fish", name: "さかな", box: [124, 100], label: "ひし形をさかなの胴体へ", targetLabel: "さかなのまるいひし形の胴体の型" }
   ];
   const piece = {
     element: document.getElementById("piece"),
@@ -18,10 +21,12 @@
     activePointerId: null,
     offset: { x: 0, y: 0 },
     size: 0,
+    height: 0,
     radius: 0
   };
   const visuals = stages.map((stage) => ({
     shape: document.getElementById(`shape-${stage.shape}`),
+    details: document.getElementById(`details-${stage.animal}`),
     animal: document.getElementById(`animal-${stage.animal}`)
   }));
   let stageIndex = 0;
@@ -38,7 +43,7 @@
 
   function move(point) {
     piece.center = { ...point };
-    piece.element.style.transform = `translate3d(${point.x - piece.size / 2}px, ${point.y - piece.size / 2}px, 0)`;
+    piece.element.style.transform = `translate3d(${point.x - piece.size / 2}px, ${point.y - piece.height / 2}px, 0)`;
   }
 
   function clearStageTimer() {
@@ -79,8 +84,11 @@
     const currentStage = stages[stageIndex];
     board.dataset.shape = currentStage.shape;
     board.dataset.animal = currentStage.animal;
+    const [width, height] = currentStage.box;
+    document.getElementById("piece-svg").setAttribute("viewBox", `${-width / 2} ${-height / 2} ${width} ${height}`);
     visuals.forEach((visual, index) => {
       visual.shape.toggleAttribute("hidden", index !== stageIndex);
+      visual.details.toggleAttribute("hidden", index !== stageIndex);
       visual.animal.toggleAttribute("hidden", index !== stageIndex);
     });
     piece.element.setAttribute("aria-label", currentStage.label);
@@ -91,18 +99,31 @@
 
   function layout() {
     bounds = board.getBoundingClientRect();
-    piece.size = piece.element.offsetWidth;
-    const targetWidth = piece.target.offsetWidth;
-    const targetHeight = piece.target.offsetHeight;
+    const [width, height] = stages[stageIndex].box;
+    // Every SVG user unit has the same CSS size in the piece and animal.
+    // A short landscape screen reserves room for both without changing their ratio.
+    const unit = Math.min(1.5, Math.max(1.2, Math.min(bounds.width + 24, bounds.height + 24) * 0.0036),
+      bounds.width / 248, bounds.height / (156 + height + 24));
+    piece.element.style.width = `${width * unit}px`;
+    piece.element.style.height = `${height * unit}px`;
+    piece.target.style.width = `${240 * unit}px`;
+    piece.target.style.height = `${156 * unit}px`;
+    features.style.width = piece.target.style.width;
+    features.style.height = piece.target.style.height;
+    piece.size = width * unit;
+    piece.height = height * unit;
+    const targetWidth = 240 * unit;
+    const targetHeight = 156 * unit;
     const x = bounds.width / 2;
     const y = Math.max(targetHeight / 2 + 4, bounds.height * 0.30);
     piece.destination = { x, y };
-    piece.start = { x, y: Math.min(bounds.height * 0.80, bounds.height - piece.size / 2 - 4) };
-    const socketSize = targetWidth / 2;
+    piece.start = { x, y: Math.min(bounds.height * 0.80, bounds.height - piece.height / 2 - 4) };
+    const socketSize = Math.max(piece.size, piece.height);
     // The wide circular region follows the rendered socket and piece sizes.
     // Leave 30px between it and the starting center so a touch alone won't match.
-    piece.radius = Math.min(socketSize / 2 + piece.size * 0.60, piece.start.y - y - 30);
+    piece.radius = Math.min(socketSize * 1.1, piece.start.y - y - 30);
     piece.target.style.transform = `translate3d(${x - targetWidth / 2}px, ${y - targetHeight / 2}px, 0)`;
+    features.style.transform = piece.target.style.transform;
     move(piece.start);
   }
 
@@ -148,10 +169,11 @@
   }
 
   function follow(event) {
-    const half = piece.size * 1.025 / 2;
+    const half = piece.size / 2;
+    const halfHeight = piece.height / 2;
     move({
       x: Math.max(half, Math.min(bounds.width - half, event.clientX - bounds.left + piece.offset.x)),
-      y: Math.max(half, Math.min(bounds.height - half, event.clientY - bounds.top + piece.offset.y))
+      y: Math.max(halfHeight, Math.min(bounds.height - halfHeight, event.clientY - bounds.top + piece.offset.y))
     });
     const distance = Math.hypot(piece.center.x - piece.destination.x, piece.center.y - piece.destination.y);
     piece.target.classList.toggle("is-near", distance <= piece.radius + piece.size * 0.12);
