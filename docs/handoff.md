@@ -4,7 +4,7 @@
 
 ## 現在状態
 
-### 2026-10-09 APP-013 吸着1秒・完成キラキラ（実装・ローカル検証済み）
+### 2026-10-09 APP-013 吸着1秒・完成キラキラ（実装・Pages検証済み）
 
 - 開始main／origin/main：`f244b709b9a009e7b56747b7f71d9601d57c89e1`。最新取得後に一致し、AGENTS・共通資料・PM確定の個別正本を確認。個別正本は変更なし
 - 吸着範囲へ入った瞬間から1000msの連続ease-outで移動。ドラッグ座標を確定してから開始し、待機・位置飛び・サイズ変化・指離しの巻き戻りなし。広い判定と誤配置280ms戻りを維持
@@ -15,7 +15,9 @@
 - reduced-motionは吸着／戻り60ms、頭・尾・跳ね・耳・泳ぎ停止、光は移動・拡大なしの最大不透明度0.3／600msフェード、次へのフェード120ms。完成・循環・キーボードは全5種PASS
 - 実時間181.4秒／58ステージでDOM112固定、光4個固定／発火58回、タイマー最大1本／待機時0本、二重進行・不要スクロール・外部通信・console error／warningなし
 - Node300ステージ／疑似930秒、APP-010／011 Node回帰、全18 JS構文、既存ポータル5カード＋APP-002／003／004／006／010／011の3サイズ操作回帰をPASS。既存分析は検証時だけスタブ化。通常／光／動作45枚＋reduced-motion5枚を生成・目視確認。成果物：`/workspace/scratch/app013-snap-glow-20261009/`
-- 変更範囲はAPP-013本体3ファイル・既存テスト2ファイル・必須4文書。正式公開・ポータル・ホーム・分析・ConoHa allowlist・既存公開コードは変更なし。mainへpush後にPages公開版を確認
+- 変更範囲はAPP-013本体3ファイル・既存テスト2ファイル・必須4文書。正式公開・ポータル・ホーム・分析・ConoHa allowlist・既存公開コードは変更なし
+- 実装commit `12b19603d6cdba472a897b215abeb12b9a4939c9`の[Pages run 37938097613](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37938097613)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200・mainとSHA-256一致。TLS検証つき取得版でも全5種×3サイズ、連続吸着・減速・光・動作・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS
+- 公開HTTPSへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可。証明書検証・信頼設定は変更なし。mainへcommit／push済み。試作URL：`https://yuy080622-source.github.io/toddler-web-apps/apps/APP-013-shape-match/`
 - 次はPMがiPhone Safariで「入った瞬間に動く→約1秒で減速して収まる→小さく光る→動物が動く」を確認。指離し、複数指、回転・中断復帰、safe area、刺激量・発熱も実機確認待ち。正式公開は別判断
 
 

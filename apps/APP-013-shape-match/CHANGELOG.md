@@ -11,7 +11,9 @@
 - 5動物×3サイズでCSS実測1000ms、到達通知998.1〜1071.5ms、位置・サイズ一致・連続移動・巻き戻り防止、光600ms／1回、循環、実2指、各段階100回高速入力、cancel／capture喪失、実BFCache、reduced-motionをPASS
 - 実時間181.4秒／58ステージ、DOM112固定・光4個固定／発火58回・タイマー最大1本／待機時0本、不要スクロール・外部通信・console error／warningなし
 - Node300ステージ／疑似930秒、APP-010／011 Node回帰、全18 JS構文、既存ポータル＋6アプリの3サイズ操作回帰をPASS。通常／光／動作45枚＋reduced-motion5枚を生成・目視レビュー
-- README／CHANGELOG、handoff／共通changelogを更新。mainへpush後にPages公開版を確認。正式公開・ポータル・ホーム・分析・ConoHa allowlistは変更なし
+- 実装commit `12b19603d6cdba472a897b215abeb12b9a4939c9`の[Pages run 37938097613](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37938097613)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200・mainとSHA-256一致
+- TLS検証つきHTTPS取得版でも全5種×3サイズ、連続吸着・減速・光・動作・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS。公開HTTPSへのChromium直接接続は環境CA未信頼のため確認不可。証明書検証・信頼設定は変更なし
+- README／CHANGELOG、handoff／共通changelogへ公開確認結果を更新。mainへcommit／push済み。正式公開・ポータル・ホーム・分析・ConoHa allowlistは変更なし、iPhone実機のPM確認待ち
 
 ## 2026-10-09 — 実装済み5動物・最新main・Pages版を再確認
 

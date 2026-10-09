@@ -77,7 +77,9 @@ Playwrightは検証時だけ使用し、アプリの依存には含めません�
 - 実時間181.4秒／58ステージでDOM112固定、光4個固定／発火58回、タイマー最大1本・待機時0本、二重進行・不要スクロール・外部通信・console error／warningなし。
 - Node300ステージ／疑似930秒（transitionend未通知の保険も検証）、APP-010／011 Node回帰、全18 JS構文、既存ポータル＋APP-002／003／004／006／010／011の3サイズ操作回帰をPASS。既存分析は検証時だけスタブ化、公開コードは変更なし。
 - 通常／キラキラ／動物動作45枚＋reduced-motion5枚を生成し、全5動物・3サイズの光の位置・輪郭・接続を目視レビュー。成果物：`/workspace/scratch/app013-snap-glow-20261009/`。
-- GitHub Pages公開版の確認はmainへpush後に実施。正式公開はiPhone実機のPM確認後に別判断。個別正本は今回変更していません。
+- 実装commit `12b19603d6cdba472a897b215abeb12b9a4939c9`の[Pages run 37938097613](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37938097613)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200、mainとのSHA-256一致。
+- TLS検証つきHTTPSで取得した公開版でも、全5種×3サイズ、連続吸着・減速・光・固有動作・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS。公開HTTPS URLへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可。証明書検証・信頼設定は変更なし。
+- mainへcommit／push済み。正式公開はiPhone実機のPM確認後に別判断。個別正本は今回変更していません。
 
 ### 2026-10-09 最新main・公開版の再確認
 
