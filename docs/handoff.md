@@ -1,8 +1,20 @@
 # PRJ-003 引き継ぎ
 
-更新日：2026-10-08
+更新日：2026-10-09
 
 ## 現在状態
+
+### 2026-10-09 APP-013 5動物・最新main・Pages版の再確認
+
+- 最新origin/mainを取得し、開始SHA`d9e3c57de45905193bae7e97b492528ee19a577c`とローカルmainの一致を確認。指定基準`1294edbde7e871e269bc81f2f0d8940639424b66`以後の5動物改修は実装済み。個別正本の「2026-10-08 採用済みデザイン・5動物改修仕様（現行優先）」を再確認し、アプリ本体・テスト・正本に追加変更なし
+- 現行固定順は円かめ→横長角丸長方形いぬ→縦長たまご形ひよこ→丸みのある三角顔きつね→角丸ひし形さかな。共通SVG輪郭と共通スケールを維持し、完成後もピース自体が動物の一部として残る
+- 開始SHAの[Pages run 37781908408](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37781908408)はbuild／deploy success。公開HTML／CSS／JSと必須4文書をTLS検証つきHTTPSで取得し、HTTP 200・mainとSHA-256一致。取得版をローカル配信してブラウザ検証
+- 390×844／844×390／1024×768、全5種の輪郭・サイズ一致、接続・固有動作・自動循環、広いpointerup前吸着、範囲外戻り、実pointercancelを再検証PASS
+- 実2指所有権、100回高速入力・完成中入力・二重進行防止、lostpointercapture、resize・回転、visibilitychange相当、実BFCache（pageshow.persisted=true）、全5種のreduced-motion・キーボードを再検証PASS。DOM107固定・タイマー最大1本／待機時0本、不要スクロール・外部通信・console error／warningなし
+- 通常／完成30枚と3サイズ比較シートを再生成し目視確認。犬の横長胴体・首・脚、狐の耳・顔・頬・胴体、全動物の接続・画面内配置に問題なし。作業環境の成果物：`/workspace/scratch/app013-five-recheck-20261009/`
+- APP-013 Node300ステージ／疑似540秒、APP-010／011 Node回帰、全18 JS構文、git diff --checkを再検証PASS。2026-10-08の実時間181.7秒／96ステージ・既存公開アプリ3サイズスモーク回帰は同一コードの記録を引き継ぎ、今回は長時間テストを再実施していない
+- 今回の変更はAPP-013 README／CHANGELOGと共通handoff／changelogのみ。既存公開アプリ・共通ファイル・分析・ポータル・ConoHa設定への差分なし。公開HTTPSへのChromium直接接続は実装時の環境CA制約があるため、TLS取得と取得版ブラウザ検証を用いた
+- 仕様変更を要する未解決問題なし。次はPMがiPhone Safariで持ちやすさ、広い吸着、5動物の見た目・動き、safe area、回転・複数指・中断復帰、刺激量・発熱を確認。正式公開は引き続き別判断
 
 ### 2026-10-08 APP-013 5動物デザイン改善（実装済み）
 

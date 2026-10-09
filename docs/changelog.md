@@ -1,5 +1,14 @@
 # PRJ-003 変更履歴
 
+## 2026-10-09 — APP-013 実装済み5動物・最新main・Pages版を再確認
+
+- 最新origin/mainを取得し、開始SHA`d9e3c57de45905193bae7e97b492528ee19a577c`と一致。指定基準`1294edbde7e871e269bc81f2f0d8940639424b66`以後に依頼の5動物仕様は実装済みだったため、アプリ本体・テスト・個別正本は追加変更なし
+- 開始SHAのPages run `37781908408`はbuild／deploy success。公開HTML／CSS／JSと必須4文書をTLS検証つきHTTPSで取得し、HTTP 200・mainとSHA-256一致
+- 取得した公開版で全5種×3サイズの輪郭・実寸一致、完成時の接続、固有動作・循環、広いpointerup前吸着、戻り、実タッチcancel、実2指・100回高速入力・完成中入力、capture喪失、回転・中断、実BFCache、reduced-motionを再検証PASS
+- 通常／完成30枚と3サイズ比較シートを再生成・目視確認。DOM107固定・タイマー最大1本／待機時0本、不要スクロール・外部通信・console error／warningなし
+- APP-013 Node300ステージ／疑似540秒、APP-010／011 Node回帰、全18 JS構文、git diff --checkを再検証PASS。2026-10-08の実時間181.7秒／96ステージ・既存公開アプリ3サイズスモーク回帰は同一コードの記録を引き継ぎ、今回は長時間テストを再実施していない
+- APP-013 README／CHANGELOG、handoff／共通changelogを更新。既存公開アプリ・共通ファイル・公開設定は変更なし。GitHub Pages試作のみ、iPhone実機・PM判定待ち。仕様変更を要する問題なし
+
 ## 2026-10-08 — APP-013 5動物デザイン改善を実装
 
 - Pages：実装commit `de9696dd6010192695f857d8aae04846cd6993ff`の[run 37781153375](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37781153375)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200、mainとSHA-256一致

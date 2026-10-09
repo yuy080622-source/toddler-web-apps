@@ -66,16 +66,19 @@ Playwrightは検証時だけ使用し、アプリの依存には含めません�
 
 ## 確認結果
 
-- Pages：実装commit `de9696dd6010192695f857d8aae04846cd6993ff`の[run 37781153375](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37781153375)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200、mainとSHA-256一致
-- TLS検証つきHTTPSで取得したPages版の5種×3サイズ・輪郭一致・全動作・循環・実タッチ・実BFCache・reduced-motion等のブラウザ回帰もPASS。公開HTTPS URLへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可。証明書検証・信頼設定は変更なし
-- mainへのcommit／push成功、main／origin/main同期。実機確認・PM承認後に正式公開を別判断。仕様変更を要する未解決問題はなし
+### 2026-10-09 最新main・公開版の再確認
 
-- Chromiumの5種×3サイズで同一形状参照・描画境界一致・ピース保持・全固有動作・ひよこ／魚の一体移動・固定循環、広い吸着・各形状の範囲外戻り／実pointercancelをPASS
-- 実2指所有権、100回高速入力、完成中入力、lostpointercapture、resize・回転、visibilitychange相当、実BFCache（pageshow.persisted=true）、全5種のreduced-motionをPASS
-- 通常／完成のスクリーンショット30枚と3サイズの比較シートを生成して目視レビュー。犬の横長胴体・首・脚、狐の顔・耳・頬、周囲パーツの接続・輪郭・画面内配置を確認
-- 実時間181.7秒／96ステージでDOM107固定・タイマー最大1本／待機時0本、二重進行・外部通信・console error／warningなし
-- APP-010／011 Node回帰、既存ポータル＋APP-002／003／004／006／010／011の3サイズスモーク回帰、全18 JS構文、git diff --checkをPASS
+- 開始main／origin/mainは`d9e3c57de45905193bae7e97b492528ee19a577c`。指定基準`1294edbde7e871e269bc81f2f0d8940639424b66`以後の5動物改修は実装済みでした。アプリ本体・テスト・個別正本の追加変更は不要と確認し、必須4文書へ最新の検証結果を反映。
+- [Pages run 37781908408](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/37781908408)は開始mainでbuild／deploy success。公開HTML／CSS／JSと必須4文書をTLS検証つきHTTPSで再取得し、HTTP 200・mainとのSHA-256一致を確認。
+- 取得した公開版をローカル配信し、390×844／844×390／1024×768の全5種で輪郭・描画境界一致、ピース保持、固有動作、一体移動、固定循環、広いpointerup前吸着、範囲外戻り、実pointercancelを再検証PASS。
+- 実2指の所有権、100回高速入力、完成中入力、lostpointercapture、resize・回転、visibilitychange相当、実BFCache（pageshow.persisted=true）、全5種のreduced-motion・キーボードを再検証PASS。DOM107固定・タイマー最大1本／待機時0本、不要スクロール・外部通信・console error／warningなし。
+- 通常／完成30枚と3サイズの比較シートを再生成・目視レビュー。犬の横長胴体・首・脚、狐の顔・耳・頬・胴体、全動物の接続・輪郭・画面内配置を確認。検証成果物は作業環境の`/workspace/scratch/app013-five-recheck-20261009/`へ保存。
+- APP-013 Node300ステージ／疑似540秒、APP-010／011 Node回帰、全18 JavaScript構文、git diff --checkを再検証PASS。
 
-- Node300ステージ・540秒の疑似時間、5種類で所有権・キャンセル・高速入力・各段階の中断・古いcallbackをPASS。
-- 全18 JavaScript構文、git diff --check、APP-010／011 Node回帰、既存ポータル＋APP-002／003／004／006／010／011の3サイズスモーク回帰をPASS。既存分析は検証時のみスタブ化。
-- iPhone実機の複数指、safe area、回転・復帰、刺激量・発熱・幼児の操作感はPM確認待ちです。
+### 2026-10-08 実装時の継続動作・既存アプリ回帰
+
+- 実装commitは`de9696dd6010192695f857d8aae04846cd6993ff`。以後アプリ本体・テストに変更はありません。
+- 実時間181.7秒／96ステージでDOM107固定・タイマー最大1本／待機時0本、二重進行・外部通信・console error／warningなし。2026-10-09は同一コードの記録を引き継ぎ、長時間テストの再実施はしていません。
+- 既存ポータル＋APP-002／003／004／006／010／011の3サイズスモーク回帰は実装時にPASS。今回も既存公開アプリ・共通ファイル・公開設定への差分はありません。
+
+公開HTTPS URLへのChromium直接接続は実装時に環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可だったため、証明書検証つきHTTPS取得と取得版のブラウザ検証を用いています。iPhone実機の複数指、safe area、回転・復帰、刺激量・発熱・幼児の操作感はPM確認待ちです。仕様変更を要する未解決問題はありません。
