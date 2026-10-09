@@ -35,6 +35,7 @@
   let suspended = document.hidden;
   let stageTimer = null;
   let timerVersion = 0;
+  const snapDuration = () => motion.matches ? 60 : 1000;
 
   function setState(next) {
     state = next;
@@ -147,6 +148,7 @@
   }
 
   function finishSnap() {
+    if (suspended || state !== "completing" || board.classList.contains("is-complete")) return;
     board.classList.add("is-complete");
     piece.target.setAttribute("aria-label", `${stages[stageIndex].name}ができた`);
     status.textContent = `${stages[stageIndex].name}ができた`;
@@ -154,18 +156,23 @@
       setState("transitioning");
       board.classList.add("is-transitioning");
       schedule(nextStage, motion.matches ? 120 : 220);
-    }, 1400);
+    }, 1800);
   }
 
   function snap() {
     if (suspended || (state !== "idle" && state !== "dragging")) return;
+    // Commit the latest dragged position before enabling the snap transition.
+    // Otherwise one pointermove can coalesce the drag and snap into a position jump.
+    piece.element.getBoundingClientRect();
     setState("completing");
     release();
     piece.element.classList.remove("is-returning");
     piece.element.classList.add("is-placed");
     piece.element.setAttribute("aria-disabled", "true");
     move(piece.destination);
-    schedule(finishSnap, motion.matches ? 60 : 180);
+    // The transition end marks actual arrival. One fallback reuses the same timer
+    // slot for zero-distance moves or a browser that omits transitionend.
+    schedule(finishSnap, snapDuration() + 80);
   }
 
   function follow(event) {
@@ -227,7 +234,10 @@
     if (event.detail === 0 && state === "idle") snap();
   });
   piece.element.addEventListener("transitionend", (event) => {
-    if (event.target === piece.element && event.propertyName === "transform") piece.element.classList.remove("is-returning");
+    if (event.target !== piece.element || event.propertyName !== "transform") return;
+    piece.element.classList.remove("is-returning");
+    // Ignore a late return transition event; it cannot finish a new snap early.
+    if (Math.abs(event.elapsedTime * 1000 - snapDuration()) < 25) finishSnap();
   });
   piece.target.addEventListener("animationend", (event) => {
     if (event.animationName === "stage-in") board.classList.remove("is-entering");

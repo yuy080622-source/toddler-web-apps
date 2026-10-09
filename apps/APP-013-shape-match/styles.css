@@ -60,7 +60,7 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
   touch-action: none;
   cursor: grab;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 180ms cubic-bezier(.22, .7, .3, 1), opacity 220ms ease-out;
+  transition: transform 1000ms cubic-bezier(.2, .55, .35, 1), opacity 220ms ease-out;
   z-index: 2;
 }
 .piece-art { display: block; width: 100%; height: 100%; transform-origin: center; }
@@ -72,21 +72,25 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .is-entering .target, .is-entering .piece, .is-entering .features { animation: stage-in 180ms ease-out 1; }
 .piece:focus-visible { outline: 3px solid #536c76; outline-offset: 6px; border-radius: 12px; }
 #board.is-layout .piece, #board.is-layout .target, #board.is-layout .features, #board.is-layout svg * { transition: none; animation: none; }
-.is-complete .turtle-head { animation: turtle-peek 1100ms ease-in-out 160ms 1; }
+.sparkles { fill: #d8ba76; opacity: 0; }
+.is-complete .sparkles { animation: completion-glow 600ms ease-in-out 1; }
+.is-complete .turtle-head { animation: turtle-peek 1100ms ease-in-out 600ms 1; }
 .dog-tail, .fox-ear, .fish-tail { transform-box: fill-box; }
 .dog-tail { transform-origin: 94% 96%; }
 .fox-ear { transform-origin: center bottom; }
 .fish-tail { transform-origin: right center; }
-.is-complete .dog-tail { animation: dog-wag 1100ms ease-in-out 160ms 1; }
-.is-complete .fox-ear-left { animation: fox-left 1100ms ease-in-out 160ms 1; }
-.is-complete .fox-ear-right { animation: fox-right 1100ms ease-in-out 160ms 1; }
+.is-complete .dog-tail { animation: dog-wag 1100ms ease-in-out 600ms 1; }
+.is-complete .fox-ear-left { animation: fox-left 1100ms ease-in-out 600ms 1; }
+.is-complete .fox-ear-right { animation: fox-right 1100ms ease-in-out 600ms 1; }
 .is-complete[data-animal="chick"] .target > svg,
 .is-complete[data-animal="chick"] .features > svg,
-.is-complete[data-animal="chick"] .piece-art { animation: chick-hop 1100ms ease-in-out 160ms 1; }
+.is-complete[data-animal="chick"] .piece-art { animation: chick-hop 1100ms ease-in-out 600ms 1; }
 .is-complete[data-animal="fish"] .target > svg,
 .is-complete[data-animal="fish"] .features > svg,
-.is-complete[data-animal="fish"] .piece-art { animation: fish-swim 1100ms ease-in-out 160ms 1; }
-.is-complete .fish-tail { animation: fish-tail 1100ms ease-in-out 160ms 1; }
+.is-complete[data-animal="fish"] .piece-art { animation: fish-swim 1100ms ease-in-out 600ms 1; }
+.is-complete .fish-tail { animation: fish-tail 1100ms ease-in-out 600ms 1; }
+@keyframes completion-glow { 0%, 100% { opacity: 0; } 40%, 55% { opacity: .65; } }
+@keyframes completion-glow-reduced { 0%, 100% { opacity: 0; } 40%, 55% { opacity: .3; } }
 @keyframes turtle-peek { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(3px); } }
 @keyframes dog-wag { 0%, 50%, 100% { transform: rotate(0); } 20%, 70% { transform: rotate(-8deg); } 35%, 85% { transform: rotate(6deg); } }
 @keyframes fox-left { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(-7deg); } }
@@ -97,6 +101,7 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
 @keyframes fish-tail { 0%, 50%, 100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
+  .is-complete .sparkles { animation-name: completion-glow-reduced; }
   .piece, .piece.is-returning { transition-duration: 60ms; }
   .piece.is-dragging .piece-art { transform: none; }
   .target, .features { transition-duration: 120ms; }

@@ -6,6 +6,8 @@ const path = require("node:path");
 const vm = require("node:vm");
 const root = path.join(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "app.js"), "utf8");
+const SNAP_FALLBACK = 1080;
+const CYCLE_FALLBACK = SNAP_FALLBACK + 1800 + 220;
 
 class Target {
   constructor(width = 140, height = width) {
@@ -159,12 +161,22 @@ assert.equal(env.piece.captures.size, 0, "snap releases ownership immediately");
 assert.deepEqual(env.point(env.piece), destination);
 assert.equal(env.piece.attributes["aria-disabled"], "true");
 assert.equal(env.board.classList.contains("is-complete"), false, "snap precedes animal completion");
-env.advance(179);
+env.advance(999);
 assert.equal(env.status.textContent, "");
 env.advance(1);
+assert.equal(env.status.textContent, "", "completion waits for actual transform arrival");
+env.piece.dispatch("pointerup", { pointerId: 1, ...home });
+env.piece.dispatch("pointercancel", { pointerId: 1 });
+env.piece.dispatch("transitionend", { target: env.piece, propertyName: "opacity", elapsedTime: 1 });
+env.piece.dispatch("transitionend", { target: env.piece, propertyName: "transform", elapsedTime: 0.28 });
+assert.equal(env.board.classList.contains("is-complete"), false, "a stale return transition cannot finish a snap");
+env.piece.dispatch("transitionend", { target: env.piece, propertyName: "transform", elapsedTime: 1 });
 assert.equal(env.status.textContent, "かめができた");
 assert.equal(env.board.classList.contains("is-complete"), true);
 assert.equal(env.timers.size, 1);
+const rewardTimer = [...env.timers.keys()][0];
+env.piece.dispatch("transitionend", { target: env.piece, propertyName: "transform", elapsedTime: 1 });
+assert.equal([...env.timers.keys()][0], rewardTimer, "a duplicate arrival cannot restart the reward");
 
 // A late up/cancel and fast repeated inputs cannot start another stage chain.
 for (let i = 0; i < 100; i++) {
@@ -175,7 +187,7 @@ for (let i = 0; i < 100; i++) {
   env.piece.dispatch("keydown", { key: "Enter" });
 }
 assert.equal(env.timers.size, 1);
-env.advance(1399);
+env.advance(1799);
 checkStage(env, "circle", "turtle");
 env.advance(1);
 assert.equal(env.board.dataset.state, "transitioning");
@@ -187,24 +199,24 @@ checkStage(env, "rectangle", "dog");
 assert.equal(env.board.dataset.state, "idle");
 assert.equal(env.timers.size, 0);
 env.approach();
-env.advance(180);
+env.advance(SNAP_FALLBACK);
 assert.equal(env.status.textContent, "いぬができた");
-env.advance(1620);
+env.advance(2020);
 checkStage(env, "egg", "chick");
 env.approach();
-env.advance(180);
+env.advance(SNAP_FALLBACK);
 assert.equal(env.status.textContent, "ひよこができた");
-env.advance(1620);
+env.advance(2020);
 checkStage(env, "triangle", "fox");
 env.approach();
-env.advance(180);
+env.advance(SNAP_FALLBACK);
 assert.equal(env.status.textContent, "きつねができた");
-env.advance(1620);
+env.advance(2020);
 checkStage(env, "diamond", "fish");
 env.approach();
-env.advance(180);
+env.advance(SNAP_FALLBACK);
 assert.equal(env.status.textContent, "さかなができた");
-env.advance(1620);
+env.advance(2020);
 checkStage(env, "circle", "turtle");
 
 // Only the first pointer owns the piece.
@@ -217,7 +229,7 @@ assert.equal(env.piece.captures.size, 1);
 assert.equal(env.piece.hasPointerCapture(10), true);
 env.piece.dispatch("pointermove", { pointerId: 10, ...env.point(env.target) });
 assert.equal(env.board.dataset.state, "completing");
-env.advance(1800);
+env.advance(CYCLE_FALLBACK);
 checkStage(env, "rectangle", "dog");
 
 // Outside drops and capture cancellation are neutral and immediately reusable.
@@ -235,11 +247,16 @@ for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
 
 // Interrupt every phase and ensure old callbacks cannot revive a half-complete animal.
 for (let stage = 0; stage < 5; stage++) {
-for (const phase of ["dragging", "snapping", "reward", "transitioning"]) {
+for (const phase of ["dragging", "snapping", "glow", "reward", "transitioning"]) {
   for (const event of ["visibilitychange", "pagehide"]) {
     const current = env.board.dataset.animal;
     if (phase === "dragging") env.start();
-    else { env.approach(); if (phase === "reward") env.advance(180); if (phase === "transitioning") env.advance(1580); }
+    else {
+      env.approach();
+      if (phase === "glow") env.advance(SNAP_FALLBACK + 100);
+      if (phase === "reward") env.advance(SNAP_FALLBACK + 700);
+      if (phase === "transitioning") env.advance(SNAP_FALLBACK + 1800);
+    }
     const stale = [...env.timers.values()].map((timer) => timer.callback);
     if (event === "visibilitychange") { env.document.hidden = true; env.document.dispatch(event); }
     else env.window.dispatch(event, { persisted: true });
@@ -259,12 +276,12 @@ for (const phase of ["dragging", "snapping", "reward", "transitioning"]) {
   }
 }
 env.approach();
-env.advance(1800);
+env.advance(CYCLE_FALLBACK);
 }
 
 for (const [w, h, size] of [[390,844,140],[844,390,140],[1024,768,150]]) {
   env.approach();
-  env.advance(180);
+  env.advance(SNAP_FALLBACK);
   const animal = env.board.dataset.animal;
   env.resize(w, h, size);
   assert.equal(env.board.dataset.animal, animal);
@@ -285,12 +302,13 @@ reduced.approach();
 reduced.advance(59);
 assert.equal(reduced.status.textContent, "");
 reduced.advance(1);
+reduced.piece.dispatch("transitionend", { target: reduced.piece, propertyName: "transform", elapsedTime: 0.06 });
 assert.equal(reduced.status.textContent, "かめができた");
-reduced.advance(1520);
+reduced.advance(1920);
 checkStage(reduced, "rectangle", "dog");
 reduced.piece.dispatch("keydown", { key: " " });
 assert.equal(reduced.board.dataset.state, "completing");
-reduced.advance(1580);
+reduced.advance(2060);
 checkStage(reduced, "egg", "chick");
 reduced.piece.dispatch("click", { detail: 1 });
 assert.equal(reduced.board.dataset.state, "idle", "ordinary click is not a shortcut");
@@ -301,7 +319,7 @@ reduced.media.dispatch("change");
 assert.equal(reduced.board.dataset.state, "idle");
 assert.equal(reduced.timers.size, 0);
 
-// 300 stages / 540 seconds on the deterministic clock, with repeated BFCache return.
+// 300 fallback-driven stages / 930 seconds, including missing transitionend and BFCache.
 for (let stage = 0; stage < 5; stage++) {
   for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
     env.start(99);
@@ -315,13 +333,13 @@ for (let stage = 0; stage < 5; stage++) {
   env.approach();
   for (let i = 0; i < 100; i++) env.piece.dispatch("keydown", { key: "Enter" });
   assert.equal(env.timers.size, 1);
-  env.advance(1800);
+  env.advance(CYCLE_FALLBACK);
 }
 env.resize(390, 844);
 for (let i = 0; i < 300; i++) {
   env.approach();
   assert.equal(env.timers.size, 1);
-  env.advance(1800);
+  env.advance(CYCLE_FALLBACK);
   assert.equal(env.timers.size, 0);
   env.window.dispatch("pageshow", { persisted: true });
 }
@@ -329,4 +347,4 @@ assert.equal(env.maxTimers(), 1);
 assert.equal(listenerCount(), originalListeners, "stages and return do not add event listeners");
 assert.equal(env.piece.captures.size, 0);
 assert.ok(!/setInterval|requestAnimationFrame|createElement|localStorage|sessionStorage|fetch\(|XMLHttpRequest|AudioContext|new Audio/.test(source));
-console.log("APP-013 one-shape/one-animal deterministic regression: PASS (300 stages, single timer, lifecycle, input ownership)");
+console.log("APP-013 deterministic regression: PASS (300 stages / 930 simulated seconds, arrival event/fallback, single timer, glow/reward lifecycle, input ownership)");
