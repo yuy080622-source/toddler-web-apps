@@ -7,7 +7,7 @@
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const stages = [
     { shape: "circle", animal: "turtle", name: "かめ", box: [104, 104], label: "まるをかめの甲羅へ", targetLabel: "かめのまるい甲羅の型" },
-    { shape: "rectangle", animal: "dog", name: "いぬ", box: [144, 92], label: "ながしかくをいぬの胴体へ", targetLabel: "いぬの横長の胴体の型" },
+    { shape: "rectangle", animal: "dog", name: "いぬ", box: [192, 100], label: "ながしかくをいぬの胴体へ", targetLabel: "いぬの横長の胴体の型" },
     { shape: "egg", animal: "chick", name: "ひよこ", box: [100, 120], label: "たまご形をひよこの胴体へ", targetLabel: "ひよこのたまご形の胴体の型" },
     { shape: "triangle", animal: "fox", name: "きつね", box: [112, 112], label: "さんかくをきつねの顔へ", targetLabel: "きつねのまるいさんかくの顔の型" },
     { shape: "diamond", animal: "fish", name: "さかな", box: [124, 100], label: "ひし形をさかなの胴体へ", targetLabel: "さかなのまるいひし形の胴体の型" }

@@ -31,6 +31,7 @@ main {
 .target, .piece, .features { position: absolute; left: 0; top: 0; }
 .features { pointer-events: none; z-index: 3; transition: opacity 220ms ease-out; }
 .dog-neck { stroke: none; }
+.dog-ear { fill: #c89e76; }
 .target {
   pointer-events: none;
   transition: opacity 220ms ease-out;

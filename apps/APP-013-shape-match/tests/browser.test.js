@@ -82,6 +82,41 @@ async function checkLayout(page, width, height) {
   assert.ok(target.bottom < piece.top, "animal and piece do not overlap");
   return piece.width;
 }
+async function checkDogDesign(page, completed = false) {
+  const design = await page.evaluate(() => {
+    const rect = (selector) => document.querySelector(selector).getBoundingClientRect().toJSON();
+    const ear = document.querySelector(".dog-ear");
+    const features = document.querySelector("#features");
+    const oldPointerEvents = features.style.pointerEvents;
+    features.style.pointerEvents = "auto";
+    const p = new DOMPoint(82, -5).matrixTransform(ear.getScreenCTM());
+    const inFront = document.elementFromPoint(p.x, p.y) === ear;
+    features.style.pointerEvents = oldPointerEvents;
+    return { body: rect("#animal-dog .socket"), piece: rect("#piece"), head: rect(".dog-head"),
+      nose: rect(".dog-nose"), tail: rect(".dog-tail"), ear: rect(".dog-ear"),
+      legs: [...document.querySelectorAll(".dog-leg")].map((e) => e.getBoundingClientRect().toJSON()),
+      earOpacity: Number(getComputedStyle(ear).opacity), earInFront: inFront,
+      shared: document.querySelector("#shape-rectangle").getAttribute("href") === document.querySelector("#animal-dog .socket").getAttribute("href") };
+  });
+  assert.ok(Math.abs(design.body.width / design.body.height - 2) < .01, "dachshund body is 2:1 at every viewport");
+  assert.ok(design.piece.height >= 130, "wide dog still has a large toddler touch height");
+  assert.ok(design.shared, "piece and hole share the body definition");
+  assert.ok(design.head.x + design.head.width / 2 > design.body.x + design.body.width / 2);
+  assert.ok(design.nose.x + design.nose.width / 2 > design.head.x + design.head.width / 2, "nose points right");
+  assert.ok(design.tail.x + design.tail.width / 2 < design.body.x, "tail is left of the body");
+  assert.ok(design.tail.right > design.body.left, "tail attaches inside the body outline");
+  assert.ok(design.head.left < design.body.right && design.head.right > design.body.right, "head connects at the front");
+  assert.ok(design.ear.right > design.body.right && design.ear.left < design.body.right, "ear naturally overlaps the head/body join");
+  assert.ok(design.earInFront, "ear is painted in front of the body piece");
+  assert.ok(design.earOpacity > 0, "ear is visible before and after completion");
+  if (completed) assert.equal(design.earOpacity, 1);
+  assert.equal(design.legs.length, 2);
+  design.legs.forEach((r) => {
+    assert.ok(r.height < design.body.height * .4 && r.width > r.height * .8, "legs are short and thick");
+    assert.ok(r.top < design.body.bottom && r.bottom > design.body.bottom, "legs overlap the body without gaps");
+  });
+  return design;
+}
 
 (async () => {
   const launch = {
@@ -141,7 +176,7 @@ async function checkLayout(page, width, height) {
       });
     });
     const page = await context.newPage();
-    const errors = [], requests = [], sizes = [], snapTimings = [];
+    const errors = [], requests = [], sizes = [], snapTimings = [], dogDesigns = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (["error", "warning"].includes(message.type())) errors.push(message.text()); });
     page.on("request", (request) => requests.push(request.url()));
@@ -172,6 +207,7 @@ async function checkLayout(page, width, height) {
         assert.equal((await inspect(page)).shape, shapes[i]);
         await checkLayout(page, width, height);
         await page.waitForTimeout(200); // Capture the stable stage, after its entrance fade.
+        if (animals[i] === "dog") await checkDogDesign(page);
         await page.screenshot({ path: output + "/" + width + "x" + height + "-" + animals[i] + "-before.png" });
         const stageHome = await point(page, "#piece");
         await page.mouse.move(stageHome.x, stageHome.y);
@@ -208,6 +244,7 @@ async function checkLayout(page, width, height) {
         assert.equal(alignment.href[0], alignment.href[1], "one shared definition for hole and piece");
         alignment.difference.forEach((v) => assert.ok(Math.abs(v) < 0.7, "identical rendered contour, size and placement"));
         await page.waitForTimeout(250);
+        if (animals[i] === "dog") dogDesigns.push({ width, height, ...await checkDogDesign(page, true) });
         const trace = await page.evaluate(() => window.__verification.snapTraces.at(-1));
         assert.equal(trace.cssMilliseconds, 1000, "actual transform lasts one second");
         assert.ok(trace.arrived >= 950 && trace.arrived <= 1150, "actual arrival is approximately one second");
@@ -251,6 +288,11 @@ async function checkLayout(page, width, height) {
         const transform = await page.locator(animationPart[i]).evaluate((e) => getComputedStyle(e).transform);
         assert.notEqual(transform, "none", "completed animal actually moves");
         assert.notEqual(transform, "matrix(1, 0, 0, 1, 0, 0)");
+        if (animals[i] === "dog") {
+          const frames = await page.locator(".dog-tail").evaluate((e) => e.getAnimations()[0].effect.getKeyframes());
+          assert.equal(frames.filter((f) => f.transform === "rotate(-8deg)").length, 2, "two small tail wags retained");
+          assert.equal(frames.filter((f) => f.transform === "rotate(6deg)").length, 2);
+        }
         await rapidInputs(page);
         assert.equal((await inspect(page)).sparkleStarts, sparkleStarts + 1, "inputs during snap, lights and motion never replay the glow");
         if (animals[i] === "chick" || animals[i] === "fish") {
@@ -442,7 +484,7 @@ async function checkLayout(page, width, height) {
     }
     assert.deepEqual(errors, [], "no console errors or warnings");
     assert.ok(requests.every((url) => url.startsWith(new URL(base).origin)), "no external requests");
-    fs.writeFileSync(output + "/browser-results.json", JSON.stringify({ base, sizes, snapTimings, longRun, errors, externalRequests: [], bfcache: true }, null, 2));
+    fs.writeFileSync(output + "/browser-results.json", JSON.stringify({ base, sizes, dogDesigns, snapTimings, longRun, errors, externalRequests: [], bfcache: true }, null, 2));
     console.log("APP-013 browser regression: PASS; no external requests, console errors or warnings");
   } finally {
     await browser.close();
