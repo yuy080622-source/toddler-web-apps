@@ -9,7 +9,9 @@
 - 犬の通常／完成を3サイズで改修前後に撮影・目視比較。比率・実寸・共通輪郭・耳の描画順・接続、吸着→光→しっぽ→ひよこへの進行をPASS。他4匹の通常／完成24画像は基準版とピクセル完全一致
 - 5動物×3サイズ、各段階100回高速入力、実2指、cancel／capture喪失、回転・中断・4段階の実BFCache、reduced-motion、Node300ステージ、APP-010／011 Node回帰、全18 JS構文、既存ポータル＋6アプリの3サイズ操作回帰をPASS
 - 実時間182.8秒／59ステージでDOM112固定・光4個固定／発火59回・タイマー最大1本／待機時0本。二重進行・演出残留・不要スクロール・外部通信・console error／warningなし、git diff --checkもPASS
-- Pages公開版はmainへpush後に確認。必須4文書を更新し、正式公開・ポータル・ホーム・分析・ConoHa allowlist・既存公開コードは変更なし
+- 実装commit `e2e9c2189098d02706e4e2b05b9313905ae596c6`の[Pages run 40069849153](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/40069849153)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200・mainとSHA-256一致
+- TLS検証つき取得版でも全5種×3サイズ、犬の比率・耳の描画順・しっぽ2回、吸着・光・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS。公開HTTPSへのChromium直接接続は環境CA未信頼のため確認不可。証明書検証・信頼設定は変更なし
+- 必須4文書に公開確認結果を更新し、mainへcommit／push済み。正式公開・ポータル・ホーム・分析・ConoHa allowlist・既存公開コードは変更なし。iPhone実機のPM再確認待ち
 
 ## 2026-10-09 — 即時開始の1秒吸着・固定4個の完成キラキラ
 

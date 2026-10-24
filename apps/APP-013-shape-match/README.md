@@ -84,7 +84,9 @@ Playwrightは検証時だけ使用し、アプリの依存には含めません�
 - 全5種×3サイズ、各段階100回高速入力、実2指所有権、cancel／capture喪失、resize・回転、visibilitychange相当、吸着／光／動物動作／フェード中の実BFCache、全5種のreduced-motion・キーボードをPASS。
 - Node300ステージ／疑似930秒、APP-010／011 Node回帰、全18 JS構文、既存ポータル5カード＋APP-002／003／004／006／010／011の3サイズ操作回帰をPASS。既存分析は検証時だけスタブ化し、公開コードは変更していません。
 - 実時間182.8秒／59ステージでDOM112固定、光4個固定／発火59回、タイマー最大1本・待機時0本。二重進行・演出残留・不要スクロール・外部通信・console error／warningなし。`git diff --check`もPASS。
-- Pages公開版はmainへpush後に確認。成果物：`/workspace/scratch/app013-dachshund-20261024/`。正式公開はiPhone実機のPM再確認待ちです。
+- 実装commit `e2e9c2189098d02706e4e2b05b9313905ae596c6`の[Pages run 40069849153](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/40069849153)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200・mainとSHA-256一致。
+- TLS検証つきHTTPS取得版でも全5種×3サイズ、犬の比率・耳の前景描画・しっぽ2回、吸着・光・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS。公開HTTPS URLへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可。証明書検証・信頼設定は変更していません。
+- mainへcommit／push済み。成果物：`/workspace/scratch/app013-dachshund-20261024/`。正式公開はiPhone実機のPM再確認待ちです。
 
 ### 2026-10-09 吸着1秒・完成キラキラの実装と検証
 

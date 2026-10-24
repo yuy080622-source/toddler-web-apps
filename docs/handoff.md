@@ -4,7 +4,7 @@
 
 ## 現在状態
 
-### 2026-10-24 APP-013 右向きダックスフンド（実装・ローカル検証済み）
+### 2026-10-24 APP-013 右向きダックスフンド（実装・Pages検証済み）
 
 - 開始main／origin/mainは`dd6d0bf71adacf3cc808481aad98aa9da47b1f2a`。最新取得後に指定基準と一致し、AGENTS・共通資料・個別正本の「2026-10-13 PM承認：右向きダックスフンド風の犬へ変更（現行優先）」を確認。正本は変更なし
 - 犬だけを右向きの絵本風ダックスフンドへ改修。頭・鼻は右、尾は左、短く太めの足。共通SVGの胴体176×88／角丸20単位、2:1。ピースは完成後も同じ胴体として残る
@@ -14,7 +14,8 @@
 - 他4匹の通常／完成24画像は基準版とピクセル完全一致。安全処理のJavaScriptと既存アニメーション・レイアウトCSSに差分なし（犬の寸法・耳の色のみ）。循環順、reduced-motion、無音・保存なし・外部通信なしを維持
 - 全5種×3サイズ、各段階100回高速入力、実2指、cancel／capture喪失、回転・中断・吸着／光／動作／フェード中の実BFCache、全5種のreduced-motion・キーボードをPASS。Node300ステージ／疑似930秒、APP-010／011 Node回帰、全18 JS構文、既存ポータル＋6アプリの3サイズ操作回帰もPASS
 - 実時間182.8秒／59ステージでDOM112固定・光4個固定／発火59回・タイマー最大1本／待機時0本。二重進行・演出残留・不要スクロール・外部通信・console error／warningなし、git diff --checkもPASS
-- Pages公開版はmainへpush後に確認。成果物：`/workspace/scratch/app013-dachshund-20261024/`。既存公開コード・正式公開設定・ポータル・ホーム・分析・ConoHa allowlistは変更なし
+- 実装commit `e2e9c2189098d02706e4e2b05b9313905ae596c6`の[Pages run 40069849153](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/40069849153)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200・mainとSHA-256一致。TLS検証つき取得版でも全5種×3サイズ、犬の比率・耳の前景描画・しっぽ2回、吸着・光・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS
+- 公開HTTPSへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可。証明書検証・信頼設定は変更なし。mainへcommit／push済み。成果物：`/workspace/scratch/app013-dachshund-20261024/`。既存公開コード・正式公開設定・ポータル・ホーム・分析・ConoHa allowlistは変更なし
 - 次はiPhone SafariでPMが犬の向き・胴体の長さ・耳・足・各パーツの接続、横長でもつかみやすい高さ、吸着・光・しっぽ・循環、safe area、複数指・回転・中断復帰、刺激量・発熱を再確認。正式公開はその後の別判断
 
 
