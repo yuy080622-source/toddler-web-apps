@@ -66,11 +66,11 @@ function environment(reduced = false) {
   const piece = new Target();
   const target = new Target(304, 198);
   const shapes = ["circle", "rectangle", "egg", "triangle", "diamond"].map(() => new Target());
-  const animals = ["turtle", "dog", "chick", "fox", "fish"].map(() => new Target());
+  const animals = ["turtle", "pig", "chick", "fox", "fish"].map(() => new Target());
   const ids = { board, status, piece, target, features: new Target(), "piece-svg": new Target() };
   ["circle", "rectangle", "egg", "triangle", "diamond"].forEach((shape, i) => { ids["shape-" + shape] = shapes[i]; });
-  ["turtle", "dog", "chick", "fox", "fish"].forEach((animal, i) => { ids["animal-" + animal] = animals[i]; });
-  ["turtle", "dog", "chick", "fox", "fish"].forEach((animal) => { ids["details-" + animal] = new Target(); });
+  ["turtle", "pig", "chick", "fox", "fish"].forEach((animal, i) => { ids["animal-" + animal] = animals[i]; });
+  ["turtle", "pig", "chick", "fox", "fish"].forEach((animal) => { ids["details-" + animal] = new Target(); });
   let width = 366;
   let height = 820;
   let now = 0;
@@ -195,12 +195,12 @@ assert.equal(env.timers.size, 1);
 env.advance(219);
 checkStage(env, "circle", "turtle");
 env.advance(1);
-checkStage(env, "rectangle", "dog");
+checkStage(env, "rectangle", "pig");
 assert.equal(env.board.dataset.state, "idle");
 assert.equal(env.timers.size, 0);
 env.approach();
 env.advance(SNAP_FALLBACK);
-assert.equal(env.status.textContent, "いぬができた");
+assert.equal(env.status.textContent, "ぶたができた");
 env.advance(2020);
 checkStage(env, "egg", "chick");
 env.approach();
@@ -230,7 +230,7 @@ assert.equal(env.piece.hasPointerCapture(10), true);
 env.piece.dispatch("pointermove", { pointerId: 10, ...env.point(env.target) });
 assert.equal(env.board.dataset.state, "completing");
 env.advance(CYCLE_FALLBACK);
-checkStage(env, "rectangle", "dog");
+checkStage(env, "rectangle", "pig");
 
 // Outside drops and capture cancellation are neutral and immediately reusable.
 for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
@@ -305,7 +305,7 @@ reduced.advance(1);
 reduced.piece.dispatch("transitionend", { target: reduced.piece, propertyName: "transform", elapsedTime: 0.06 });
 assert.equal(reduced.status.textContent, "かめができた");
 reduced.advance(1920);
-checkStage(reduced, "rectangle", "dog");
+checkStage(reduced, "rectangle", "pig");
 reduced.piece.dispatch("keydown", { key: " " });
 assert.equal(reduced.board.dataset.state, "completing");
 reduced.advance(2060);

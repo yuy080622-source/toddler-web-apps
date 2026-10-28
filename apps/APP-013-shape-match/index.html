@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#faf8f1">
   <title>かたちポン！</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=20261024-dog">
-  <script src="app.js?v=20261024-dog" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20261028-pig">
+  <script src="app.js?v=20261028-pig" defer></script>
 </head>
 <body>
   <!-- One definition per shape: both the hole and the persistent piece reference it. -->
@@ -42,18 +42,13 @@
             <use class="socket" href="#form-circle"/>
 
           </g>
-          <g id="animal-dog" class="animal-scene" hidden>
+          <g id="animal-pig" class="animal-scene" hidden>
             <g class="animal-surround">
-              <path class="dog-tail animal-part" d="M-82 8 Q-103 -4 -108 -19 Q-114 -32 -108 -37 Q-101 -40 -99 -26 Q-94 -13 -81 -9 Z"/>
-              <path class="dog-leg animal-part" d="M-64 35 L-66 56 Q-66 62 -56 62 H-41 Q-32 62 -35 55 L-37 35 Z"/>
-              <path class="dog-leg animal-part" d="M47 35 L46 56 Q46 62 56 62 H71 Q81 62 77 55 L74 35 Z"/>
-              <path class="animal-part dog-neck" d="M66 -28 Q75 -53 91 -43 L103 -7 L78 22 Z"/>
-              <path class="dog-head animal-part" d="M83 -55 Q90 -65 101 -59 Q113 -54 112 -39 L110 -30 Q114 -30 117 -25 Q121 -17 115 -11 Q105 -2 94 -4 Q82 -6 81 -25 Z"/>
-              <ellipse class="cream" cx="108" cy="-17" rx="10" ry="8"/>
-              <circle class="eye" cx="103" cy="-39" r="3"/>
-              <ellipse class="dog-nose eye" cx="116" cy="-22" rx="3.5" ry="3"/>
-              <path class="face-line" d="M105 -14 Q110 -9 115 -15"/>
-              <ellipse class="blush" cx="99" cy="-22" rx="4" ry="3"/>
+              <path class="pig-tail animal-part" d="M-84 0 C-92 0 -94 -4 -98 -6 C-108 -13 -117 -6 -113 2 C-109 10 -99 7 -101 1 C-103 -4 -110 -1 -106 3"/>
+              <path class="pig-leg animal-part" d="M-64 35 L-66 56 Q-66 62 -56 62 H-41 Q-32 62 -35 55 L-37 35 Z"/>
+              <path class="pig-leg animal-part" d="M47 35 L46 56 Q46 62 56 62 H71 Q81 62 77 55 L74 35 Z"/>
+              <path class="pig-hoof" d="M-50 56 V62"/>
+              <path class="pig-hoof" d="M63 56 V62"/>
             </g>
             <use class="socket" href="#form-rectangle"/>
           </g>
@@ -99,9 +94,16 @@
       <div id="features" class="features" aria-hidden="true"><svg viewBox="-120 -78 240 156"><g id="details-turtle" class="animal-details shell-lines">
               <path d="M-17 -44 Q-2 0 -17 44 M17 -44 Q2 0 17 44 M-44 -18 Q0 -4 44 -18 M-44 18 Q0 4 44 18"/>
             </g>
-<g id="details-dog" hidden>
-              <!-- This ear is in the foreground, above the persistent body piece. -->
-              <path class="dog-ear animal-part animal-surround" d="M88 -53 C76 -55 72 -46 72 -30 L72 -7 Q73 9 83 10 Q94 10 94 -4 L94 -40 Q94 -50 88 -53 Z"/>
+<g id="details-pig" class="animal-surround" hidden>
+              <!-- The round face, snout and small ear stay above the body piece. -->
+              <path class="pig-ear animal-part" d="M74 -34 Q65 -53 75 -58 Q81 -61 87 -40 L89 -32 Z"/>
+              <circle class="pig-head animal-part" cx="86" cy="-14" r="29"/>
+              <ellipse class="pig-nose pig-snout animal-part" cx="109" cy="-9" rx="11" ry="10"/>
+              <circle class="pig-nostril" cx="105" cy="-9" r="1.8"/>
+              <circle class="pig-nostril" cx="112" cy="-9" r="1.8"/>
+              <circle class="eye" cx="94" cy="-26" r="2.8"/>
+              <path class="face-line" d="M99 7 Q105 11 110 6"/>
+              <ellipse class="blush" cx="90" cy="-5" rx="4" ry="3"/>
             </g>
 <g id="details-chick" class="animal-details" hidden>
               <circle class="eye" cx="-15" cy="-17" r="3.5"/><circle class="eye" cx="15" cy="-17" r="3.5"/>

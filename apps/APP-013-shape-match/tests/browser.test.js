@@ -8,9 +8,10 @@ const base = process.env.APP013_BASE_URL || "http://127.0.0.1:8000/apps/APP-013-
 const longSeconds = Number(process.env.APP013_LONG_SECONDS || 0);
 const output = process.env.APP013_ARTIFACT_DIR || "/tmp/app013-verification";
 fs.mkdirSync(output, { recursive: true });
-const animals = ["turtle", "dog", "chick", "fox", "fish"];
+const animals = ["turtle", "pig", "chick", "fox", "fish"];
+const animalNames = ["かめ", "ぶた", "ひよこ", "きつね", "さかな"];
 const shapes = ["circle", "rectangle", "egg", "triangle", "diamond"];
-const animationPart = [".turtle-head", ".dog-tail", "#target > svg", ".fox-ear-left", ".fish-tail"];
+const animationPart = [".turtle-head", ".pig-tail", "#target > svg", ".fox-ear-left", ".fish-tail"];
 
 async function inspect(page) {
   return page.evaluate(() => ({
@@ -82,34 +83,50 @@ async function checkLayout(page, width, height) {
   assert.ok(target.bottom < piece.top, "animal and piece do not overlap");
   return piece.width;
 }
-async function checkDogDesign(page, completed = false) {
+async function checkPigDesign(page, completed = false) {
   const design = await page.evaluate(() => {
     const rect = (selector) => document.querySelector(selector).getBoundingClientRect().toJSON();
-    const ear = document.querySelector(".dog-ear");
+    const ear = document.querySelector(".pig-ear"), head = document.querySelector(".pig-head");
+    const nose = document.querySelector(".pig-nose");
     const features = document.querySelector("#features");
     const oldPointerEvents = features.style.pointerEvents;
     features.style.pointerEvents = "auto";
-    const p = new DOMPoint(82, -5).matrixTransform(ear.getScreenCTM());
-    const inFront = document.elementFromPoint(p.x, p.y) === ear;
+    const at = (x, y) => new DOMPoint(x, y).matrixTransform(ear.getScreenCTM());
+    const p = at(76, -50), h = at(70, -10), n = at(109, -9);
+    const earInFront = document.elementFromPoint(p.x, p.y) === ear;
+    const headInFront = document.elementFromPoint(h.x, h.y) === head;
+    const noseInFront = document.elementFromPoint(n.x, n.y) === nose;
     features.style.pointerEvents = oldPointerEvents;
-    return { body: rect("#animal-dog .socket"), piece: rect("#piece"), head: rect(".dog-head"),
-      nose: rect(".dog-nose"), tail: rect(".dog-tail"), ear: rect(".dog-ear"),
-      legs: [...document.querySelectorAll(".dog-leg")].map((e) => e.getBoundingClientRect().toJSON()),
-      earOpacity: Number(getComputedStyle(ear).opacity), earInFront: inFront,
-      shared: document.querySelector("#shape-rectangle").getAttribute("href") === document.querySelector("#animal-dog .socket").getAttribute("href") };
+    return { body: rect("#animal-pig .socket"), piece: rect("#piece"), head: rect(".pig-head"),
+      nose: rect(".pig-nose"), tail: rect(".pig-tail"), ear: rect(".pig-ear"),
+      legs: [...document.querySelectorAll(".pig-leg")].map((e) => e.getBoundingClientRect().toJSON()),
+      foregroundOpacity: Number(getComputedStyle(document.querySelector("#details-pig")).opacity),
+      earInFront, headInFront, noseInFront,
+      nostrils: document.querySelectorAll(".pig-nostril").length,
+      color: getComputedStyle(document.querySelector("#shape-rectangle")).fill,
+      tailLength: document.querySelector(".pig-tail").getTotalLength()
+        * Math.hypot(ear.getScreenCTM().a, ear.getScreenCTM().b),
+      shared: document.querySelector("#shape-rectangle").getAttribute("href") === document.querySelector("#animal-pig .socket").getAttribute("href") };
   });
-  assert.ok(Math.abs(design.body.width / design.body.height - 2) < .01, "dachshund body is 2:1 at every viewport");
-  assert.ok(design.piece.height >= 130, "wide dog still has a large toddler touch height");
+  assert.ok(Math.abs(design.body.width / design.body.height - 2) < .01, "pig body is 2:1 at every viewport");
+  assert.ok(design.piece.height >= 130, "wide pig still has a large toddler touch height");
   assert.ok(design.shared, "piece and hole share the body definition");
   assert.ok(design.head.x + design.head.width / 2 > design.body.x + design.body.width / 2);
   assert.ok(design.nose.x + design.nose.width / 2 > design.head.x + design.head.width / 2, "nose points right");
   assert.ok(design.tail.x + design.tail.width / 2 < design.body.x, "tail is left of the body");
   assert.ok(design.tail.right > design.body.left, "tail attaches inside the body outline");
   assert.ok(design.head.left < design.body.right && design.head.right > design.body.right, "head connects at the front");
-  assert.ok(design.ear.right > design.body.right && design.ear.left < design.body.right, "ear naturally overlaps the head/body join");
-  assert.ok(design.earInFront, "ear is painted in front of the body piece");
-  assert.ok(design.earOpacity > 0, "ear is visible before and after completion");
-  if (completed) assert.equal(design.earOpacity, 1);
+  assert.ok(Math.abs(design.head.width / design.head.height - 1) < .01, "pig has a round face");
+  assert.ok(design.ear.width < design.head.width * .6 && design.ear.height < design.head.height * .6, "ear stays small");
+  assert.ok(design.ear.bottom > design.head.top && design.ear.left < design.head.right, "ear connects to the round head");
+  assert.ok(design.nose.width / design.nose.height < 1.3, "snout is round");
+  assert.equal(design.nostrils, 2, "pig has two small nostrils");
+  assert.ok(design.earInFront && design.headInFront && design.noseInFront, "face, snout and ear are painted in front of the body");
+  assert.ok(design.foregroundOpacity > 0, "face and ear are visible before and after completion");
+  if (completed) assert.equal(design.foregroundOpacity, 1);
+  const [r, g, b] = design.color.match(/\d+/g).map(Number);
+  assert.ok(r > b && b > g, "body is pink");
+  assert.ok(design.tailLength > design.tail.width * 2, "left tail forms a curl");
   assert.equal(design.legs.length, 2);
   design.legs.forEach((r) => {
     assert.ok(r.height < design.body.height * .4 && r.width > r.height * .8, "legs are short and thick");
@@ -176,7 +193,7 @@ async function checkDogDesign(page, completed = false) {
       });
     });
     const page = await context.newPage();
-    const errors = [], requests = [], sizes = [], snapTimings = [], dogDesigns = [];
+    const errors = [], requests = [], sizes = [], snapTimings = [], pigDesigns = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (["error", "warning"].includes(message.type())) errors.push(message.text()); });
     page.on("request", (request) => requests.push(request.url()));
@@ -205,9 +222,11 @@ async function checkDogDesign(page, completed = false) {
       for (let i = 0; i < animals.length; i++) {
         assert.equal((await inspect(page)).animal, animals[i]);
         assert.equal((await inspect(page)).shape, shapes[i]);
+        assert.ok((await page.locator("#piece").getAttribute("aria-label")).includes(animalNames[i]));
+        assert.ok((await page.locator("#target").getAttribute("aria-label")).includes(animalNames[i]));
         await checkLayout(page, width, height);
         await page.waitForTimeout(200); // Capture the stable stage, after its entrance fade.
-        if (animals[i] === "dog") await checkDogDesign(page);
+        if (animals[i] === "pig") await checkPigDesign(page);
         await page.screenshot({ path: output + "/" + width + "x" + height + "-" + animals[i] + "-before.png" });
         const stageHome = await point(page, "#piece");
         await page.mouse.move(stageHome.x, stageHome.y);
@@ -229,6 +248,8 @@ async function checkDogDesign(page, completed = false) {
         await rapidInputs(page);
         assert.equal((await inspect(page)).sparkleOpacity, 0, "no sparkle while still snapping");
         await page.waitForFunction(() => document.querySelector("#board").classList.contains("is-complete"));
+        assert.equal(await page.locator("#status").textContent(), animalNames[i] + "ができた");
+        assert.equal(await page.locator("#target").getAttribute("aria-label"), animalNames[i] + "ができた");
         const completed = await page.locator(animationPart[i]).evaluate((e) => ({
           animation: getComputedStyle(e).animationName,
           iterations: getComputedStyle(e).animationIterationCount
@@ -244,7 +265,7 @@ async function checkDogDesign(page, completed = false) {
         assert.equal(alignment.href[0], alignment.href[1], "one shared definition for hole and piece");
         alignment.difference.forEach((v) => assert.ok(Math.abs(v) < 0.7, "identical rendered contour, size and placement"));
         await page.waitForTimeout(250);
-        if (animals[i] === "dog") dogDesigns.push({ width, height, ...await checkDogDesign(page, true) });
+        if (animals[i] === "pig") pigDesigns.push({ width, height, ...await checkPigDesign(page, true) });
         const trace = await page.evaluate(() => window.__verification.snapTraces.at(-1));
         assert.equal(trace.cssMilliseconds, 1000, "actual transform lasts one second");
         assert.ok(trace.arrived >= 950 && trace.arrived <= 1150, "actual arrival is approximately one second");
@@ -288,8 +309,8 @@ async function checkDogDesign(page, completed = false) {
         const transform = await page.locator(animationPart[i]).evaluate((e) => getComputedStyle(e).transform);
         assert.notEqual(transform, "none", "completed animal actually moves");
         assert.notEqual(transform, "matrix(1, 0, 0, 1, 0, 0)");
-        if (animals[i] === "dog") {
-          const frames = await page.locator(".dog-tail").evaluate((e) => e.getAnimations()[0].effect.getKeyframes());
+        if (animals[i] === "pig") {
+          const frames = await page.locator(".pig-tail").evaluate((e) => e.getAnimations()[0].effect.getKeyframes());
           assert.equal(frames.filter((f) => f.transform === "rotate(-8deg)").length, 2, "two small tail wags retained");
           assert.equal(frames.filter((f) => f.transform === "rotate(6deg)").length, 2);
         }
@@ -345,17 +366,17 @@ async function checkDogDesign(page, completed = false) {
       }
     });
     assert.equal((await inspect(page)).timers, 1);
-    await waitIdle(page, "dog");
-    assert.equal((await inspect(page)).animal, "dog", "rapid completion inputs advance once");
+    await waitIdle(page, "pig");
+    assert.equal((await inspect(page)).animal, "pig", "rapid completion inputs advance once");
     await page.waitForTimeout(1900);
-    assert.equal((await inspect(page)).animal, "dog");
+    assert.equal((await inspect(page)).animal, "pig");
     assert.equal((await inspect(page)).timers, 0);
 
     home = await point(page, "#piece");
     await touch(cdp, "touchStart", [{ ...home, id: 3 }]);
     await touch(cdp, "touchMove", [{ x: home.x + 10, y: home.y - 20, id: 3 }]);
     await touch(cdp, "touchCancel", []);
-    await waitIdle(page, "dog");
+    await waitIdle(page, "pig");
     assert.equal((await inspect(page)).state, "idle");
     assert.equal((await inspect(page)).placed, 0);
     await page.waitForTimeout(300);
@@ -374,7 +395,7 @@ async function checkDogDesign(page, completed = false) {
     await page.waitForFunction(() => document.querySelector("#board").classList.contains("is-complete"));
     await page.setViewportSize({ width: 844, height: 390 });
     await checkLayout(page, 844, 390);
-    assert.equal((await inspect(page)).animal, "dog");
+    assert.equal((await inspect(page)).animal, "pig");
     assert.equal((await inspect(page)).state, "idle");
     assert.equal((await inspect(page)).complete, false);
     assert.equal((await inspect(page)).timers, 0);
@@ -393,7 +414,7 @@ async function checkDogDesign(page, completed = false) {
       delete document.hidden;
       document.dispatchEvent(new Event("visibilitychange"));
     });
-    assert.equal((await inspect(page)).animal, "dog");
+    assert.equal((await inspect(page)).animal, "pig");
     console.log("PASS resize/rotation and visibilitychange: current animal resets to stable uncompleted state");
 
     for (const phase of ["completing", "glow", "reward", "transitioning"]) {
@@ -409,7 +430,7 @@ async function checkDogDesign(page, completed = false) {
       await page.waitForFunction(() => Boolean(document.querySelector("#board")));
       const back = await inspect(page);
       assert.equal(back.state, "idle");
-      assert.equal(back.animal, "dog");
+      assert.equal(back.animal, "pig");
       assert.equal(back.timers, 0);
       assert.equal(back.placed, 0);
       assert.equal(back.complete, false);
@@ -424,7 +445,7 @@ async function checkDogDesign(page, completed = false) {
       await autoSnap(page);
       await page.waitForFunction(() => document.querySelector("#board").classList.contains("is-complete"));
       const reduced = await page.locator("#animal-" + animal).evaluate((e) => ({
-        animation: getComputedStyle(e.querySelector(".turtle-head, .dog-tail, .fox-ear-left, .fish-tail") || document.querySelector("#target > svg")).animationName,
+        animation: getComputedStyle(e.querySelector(".turtle-head, .pig-tail, .fox-ear-left, .fish-tail") || document.querySelector("#target > svg")).animationName,
         snap: getComputedStyle(document.querySelector("#piece")).transitionDuration,
         fade: getComputedStyle(document.querySelector("#target")).transitionDuration
       }));
@@ -484,7 +505,7 @@ async function checkDogDesign(page, completed = false) {
     }
     assert.deepEqual(errors, [], "no console errors or warnings");
     assert.ok(requests.every((url) => url.startsWith(new URL(base).origin)), "no external requests");
-    fs.writeFileSync(output + "/browser-results.json", JSON.stringify({ base, sizes, dogDesigns, snapTimings, longRun, errors, externalRequests: [], bfcache: true }, null, 2));
+    fs.writeFileSync(output + "/browser-results.json", JSON.stringify({ base, sizes, pigDesigns, snapTimings, longRun, errors, externalRequests: [], bfcache: true }, null, 2));
     console.log("APP-013 browser regression: PASS; no external requests, console errors or warnings");
   } finally {
     await browser.close();

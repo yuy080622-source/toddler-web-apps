@@ -23,15 +23,13 @@ main {
   touch-action: none;
 }
 #board[data-shape="circle"] { --color: #a3c498; --outline: #6f8d69; --part: #bed2a9; }
-#board[data-shape="rectangle"] { --color: #dcb68d; --outline: #a58669; --part: #dcb68d; }
+#board[data-shape="rectangle"] { --color: #edbdc5; --outline: #b47d8b; --part: #edbdc5; }
 #board[data-shape="egg"] { --color: #efd68a; --outline: #b99c60; --part: #efd68a; }
 #board[data-shape="triangle"] { --color: #e5ac80; --outline: #ae8264; --part: #e5ac80; }
 #board[data-shape="diamond"] { --color: #9ec9cc; --outline: #719da2; --part: #9ec9cc; }
 .shape-definitions { position: absolute; overflow: hidden; pointer-events: none; }
 .target, .piece, .features { position: absolute; left: 0; top: 0; }
 .features { pointer-events: none; z-index: 3; transition: opacity 220ms ease-out; }
-.dog-neck { stroke: none; }
-.dog-ear { fill: #c89e76; }
 .target {
   pointer-events: none;
   transition: opacity 220ms ease-out;
@@ -39,6 +37,9 @@ main {
 }
 svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .animal-part { fill: var(--part); stroke: var(--outline); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.pig-ear, .pig-snout { fill: #e5a4b2; }
+.pig-nostril { fill: #a56879; }
+.pig-hoof { fill: none; stroke: var(--outline); stroke-width: 1.5; stroke-linecap: round; }
 .cream { fill: #fff5df; }
 .eye { fill: #594b40; }
 .face-line { fill: none; stroke: #594b40; stroke-width: 1.6; stroke-linecap: round; }
@@ -76,11 +77,11 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .sparkles { fill: #d8ba76; opacity: 0; }
 .is-complete .sparkles { animation: completion-glow 600ms ease-in-out 1; }
 .is-complete .turtle-head { animation: turtle-peek 1100ms ease-in-out 600ms 1; }
-.dog-tail, .fox-ear, .fish-tail { transform-box: fill-box; }
-.dog-tail { transform-origin: 94% 96%; }
+.pig-tail, .fox-ear, .fish-tail { transform-box: fill-box; }
+.pig-tail { fill: none; stroke-width: 3.5; transform-origin: right center; }
 .fox-ear { transform-origin: center bottom; }
 .fish-tail { transform-origin: right center; }
-.is-complete .dog-tail { animation: dog-wag 1100ms ease-in-out 600ms 1; }
+.is-complete .pig-tail { animation: pig-wag 1100ms ease-in-out 600ms 1; }
 .is-complete .fox-ear-left { animation: fox-left 1100ms ease-in-out 600ms 1; }
 .is-complete .fox-ear-right { animation: fox-right 1100ms ease-in-out 600ms 1; }
 .is-complete[data-animal="chick"] .target > svg,
@@ -93,7 +94,7 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
 @keyframes completion-glow { 0%, 100% { opacity: 0; } 40%, 55% { opacity: .65; } }
 @keyframes completion-glow-reduced { 0%, 100% { opacity: 0; } 40%, 55% { opacity: .3; } }
 @keyframes turtle-peek { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(3px); } }
-@keyframes dog-wag { 0%, 50%, 100% { transform: rotate(0); } 20%, 70% { transform: rotate(-8deg); } 35%, 85% { transform: rotate(6deg); } }
+@keyframes pig-wag { 0%, 50%, 100% { transform: rotate(0); } 20%, 70% { transform: rotate(-8deg); } 35%, 85% { transform: rotate(6deg); } }
 @keyframes fox-left { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(-7deg); } }
 @keyframes fox-right { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(7deg); } }
 @keyframes stage-in { from { opacity: 0; } to { opacity: 1; } }
@@ -108,7 +109,7 @@ svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .target, .features { transition-duration: 120ms; }
   .animal-surround, .animal-details, .socket { transition-duration: 60ms; }
   .is-entering .target, .is-entering .piece, .is-entering .features { animation-duration: 120ms; }
-  .is-complete .turtle-head, .is-complete .dog-tail,
+  .is-complete .turtle-head, .is-complete .pig-tail,
   .is-complete .fox-ear-left, .is-complete .fox-ear-right, .is-complete .fish-tail,
   .is-complete[data-animal="chick"] .target > svg, .is-complete[data-animal="chick"] .piece-art,
   .is-complete[data-animal="fish"] .target > svg, .is-complete[data-animal="fish"] .piece-art { animation: none; }
