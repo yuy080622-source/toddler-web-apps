@@ -7,7 +7,9 @@
 - 名前・ARIA・ライブ領域・ステージ識別子・テストをぶた／pigへ更新。巻き尾は付け根から小さく2回。吸着1000ms、星2＋光点2／600ms、保持・循環・reduced-motion・安全処理・無音を維持
 - 3サイズの通常／完成・改修前後を撮影・目視比較。他4匹の24画像は基準版とピクセル完全一致。5種×3サイズ、前景描画・共通輪郭・名称、各段階100回高速入力、実2指、cancel、回転・中断・実BFCache、reduced-motion、Node300ステージ、APP-010／011・公開済みアプリ回帰をPASS
 - 実時間182.8秒／59ステージでDOM114固定・光4個固定／発火59回・タイマー最大1本／待機時0本。二重進行・演出残留・不要スクロール・外部通信・console error／warningなし、git diff --checkもPASS
-- Pages公開版はmainへpush後に確認。必須4文書を更新。PM iPhoneデザイン最終確認待ち、正式公開・ポータル・ホーム・分析・ConoHa設定と既存公開コードは変更なし
+- 実装commit `bb40fde8a0b42aa948cf573083ca38339c74c276`の[Pages run 40613606305](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/40613606305)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200・mainとSHA-256一致
+- TLS検証つき取得版でも全5種×3サイズ、ぶたの前景描画・名前・ARIA・しっぽ2回、吸着・光・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS。公開HTTPSへのChromium直接接続は環境CA未信頼のため確認不可。証明書検証・信頼設定は変更なし
+- 必須4文書を更新し、mainへcommit／push済み。PM iPhoneデザイン最終確認待ち、正式公開・ポータル・ホーム・分析・ConoHa設定と既存公開コードは変更なし
 
 ## 2026-10-24 — 犬のみ右向きダックスフンドへ改修
 

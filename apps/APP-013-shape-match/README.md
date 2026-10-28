@@ -83,7 +83,9 @@ Playwrightは検証時だけ使用し、アプリの依存には含めません�
 - 全5種×390×844／844×390／1024×768で吸着1000ms、光4個／600ms、固有動作・循環、ぶたのしっぽ2回、名前・ARIA・完了メッセージをPASS。各段階100回高速入力、実2指、cancel／capture喪失、回転・中断、4段階の実BFCache、全5種のreduced-motion・キーボードもPASS。
 - Node300ステージ／疑似930秒、APP-010／011 Node回帰、全18 JS構文、既存ポータル5カード＋6アプリの3サイズ操作回帰をPASS。既存分析は検証時だけスタブ化し、公開コードは変更なし。
 - 実時間182.8秒／59ステージでDOM114固定、光4個固定／発火59回、タイマー最大1本・待機時0本。二重進行・演出残留・不要スクロール・外部通信・console error／warningなし。`git diff --check`もPASS。
-- Pages公開版はmainへpush後に確認。成果物：`/workspace/scratch/app013-pig-20261028/`。PMによるiPhoneデザイン最終確認待ち、正式公開・ポータル・ホーム・分析・ConoHa設定は変更していません。
+- 実装commit `bb40fde8a0b42aa948cf573083ca38339c74c276`の[Pages run 40613606305](https://github.com/yuy080622-source/toddler-web-apps/actions/runs/40613606305)はbuild／deploy success。公開HTML／CSS／JSと必須4文書はHTTP 200・mainとSHA-256一致。
+- TLS検証つきHTTPS取得版でも全5種×3サイズ、ぶたの前景描画・名前・ARIA・しっぽ2回、吸着・光・循環、100回高速入力、実2指、実BFCache、reduced-motion等をPASS。公開HTTPSへのChromium直接接続は環境CA未信頼（ERR_CERT_AUTHORITY_INVALID）で確認不可。証明書検証・信頼設定は変更なし。
+- mainへcommit／push済み。成果物：`/workspace/scratch/app013-pig-20261028/`。PMによるiPhoneデザイン最終確認待ち、正式公開・ポータル・ホーム・分析・ConoHa設定は変更していません。
 
 ### 2026-10-24 犬のみ右向きダックスフンドへ改修（履歴・PM実機デザイン不採用）
 
