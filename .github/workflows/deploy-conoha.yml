@@ -95,6 +95,9 @@ jobs:
             apps/APP-010-liquid-play/index.html
             apps/APP-010-liquid-play/styles.css
             apps/APP-010-liquid-play/app.js
+            apps/APP-013-shape-match/index.html
+            apps/APP-013-shape-match/styles.css
+            apps/APP-013-shape-match/app.js
           )
 
           for file in "${public_files[@]}"; do

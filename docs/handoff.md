@@ -4,6 +4,18 @@
 
 ## 現在状態
 
+### 2026-11-02 APP-013 公開準備・事前検証（作業ブランチ、公開実行承認待ち）
+
+- 開始origin/main：`cdfb05b329693ea0850a25de42363d8edfc39708`。AGENTS・個別正本・共通仕様／設計・handoff／changelogを確認。PM iPhone5項目とデザイン・操作性は最終承認済み。本番の公開実行承認とは区別する
+- 作業ブランチ：`prep/app013-production-20261102`。公開用変更はmainへpush／mergeしない。ConoHa workflowはpush main限定＋手動実行であることを確認し、workflow_dispatch・FTPを実行していない
+- 公開用差分はallowlistへAPP-013の3ファイル追加、ポータルの6枚目カード、一覧JSのキャッシュ版更新、APP-013の既存GA4／Clarity導入。共通ファイル・既存公開アプリ・APP-013のbody／JS／CSSは変更なし。APP-010テストはカード数の期待値だけ6へ更新
+- APP-013の解析ローダーは同一URLのmoduleで各1回。共有Clarity自体にguardを追加せず、他アプリの挙動を維持。重複再挿入・再import・中断復帰・操作後もローダー／SDK各1、GA4 config 1。SDK／ローダー遮断時も全5動物を操作可
+- workflowのビルドステップだけを隔離コピーで実行し、29ファイルの許可リスト完全一致・旧24資産同一・欠落時拒否・開発ファイル除外・相対パスをPASS。本番と同じ`/apps/apps/APP-013-shape-match/`をローカル再現。共有JSの本番MIME・内容は読み取りのみで確認済み
+- 全5動物×390×844／844×390／1024×768、吸着1000ms・光600ms・固有動作・循環、100回高速入力、実2指・cancel、回転・中断・実BFCache、reduced-motionをPASS。旧5カード維持・新カード遷移、公開済み5アプリ×3サイズ、APP-010／011 Node回帰、APP-013 Node300ステージもPASS
+- 実時間180.1秒／58ステージ、SDK応答スタブでDOM118固定・光58回・アプリタイマー最大1本／待機時0本、演出残留・不要スクロール・正常時console error／warningなし。全19 JS構文・git diffチェックもPASS
+- 実測値・PR・公開時の手順と残課題は[公開準備資料](APP-013-release-preflight.md)へ記録。成果物：`/workspace/scratch/app013-release-preflight-20261102/`。解析SDKは検証時にスタブ化し、本番計測へテストデータを送っていない。実SDKの受信・本番URLの最終確認は公開後ゲート
+- PMの公開実行承認後にPRをmainへマージして既存自動デプロイを実行する。今回は本番反映せず終了する
+
 ### 2026-11-02 APP-013 PM iPhone実機5項目PASS（正式公開準備・本番未反映）
 
 - PMがぶたの自然さ、長方形との一体感、顔・耳・巻き尾、持ちやすさ・完成演出、他4匹・回転・複数指の5項目をiPhoneで全PASS報告。デザイン・実機操作は最終承認。

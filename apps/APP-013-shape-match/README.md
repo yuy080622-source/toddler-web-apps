@@ -1,6 +1,6 @@
 # APP-013 かたちポン！
 
-1歳児にも「持つ→近づける→はまる→動物が完成して動く」が分かる、無音のMVP試作です。[個別正本](../../docs/APP-013-shape-match.md)の「2026-10-28 PM最終承認：四角形の動物を『ぶた』へ変更」を最優先とし、既存の吸着・完成演出・安全条件を維持しています。犬の仕様と検証結果は履歴です。
+1歳児にも「持つ→近づける→はまる→動物が完成して動く」が分かる、無音のWebアプリです。2026-11-02にPMがiPhone実機5項目を全PASSとし、デザイン・操作性を最終承認しました。[個別正本](../../docs/APP-013-shape-match.md)の現行優先仕様に沿い、このブランチでは正式公開準備のみを行っています。本番反映は別途PMの公開実行承認待ちです。
 
 ## 5ステージ
 
@@ -44,19 +44,28 @@
 
 ## 安全・中断復帰
 
-- HTML／CSS／Vanilla JavaScript、固定DOM114要素。単一タイマースロットを順に使い、最大1本・待機時0本。RAF・interval・操作ごとのDOM追加なし。
+- HTML／CSS／Vanilla JavaScript。ゲームのDOM・イベント・状態管理は変更なし。共有ローダーとSDK scriptの追加後は検証時DOM118固定（SDK応答はスタブ）。アプリのタイマーは最大1本・待機時0本で、RAF・interval・操作ごとのDOM追加なし。実SDK内部のDOM／タイマーとは区別します。
 - safe area、100vhフォールバック／100dvh、不要スクロール防止、縦横回転・resizeを維持。
 - visibilitychange／pagehideでpointer、タイマー、半完成、動作を解除。同じステージの未完成状態へ戻します。
 - pageshow／実BFCache復帰でも同じステージを再配置。イベント再登録なし、古いcallbackは世代番号で無効化。
 - reduced-motionでは頭・しっぽ・跳ね・耳・泳ぎを停止。スナップ／戻り60ms、フェード120ms。固定4個の光は600msの薄いフェードのみ（最大不透明度0.3）。完成と自動循環は維持します。
-- 無音、保存・外部通信なし。スコア、回数、制限時間、設定、ポータル、共通ホーム、分析、ConoHa公開設定は追加していません。
+- 無音、ゲーム進行・操作の独自保存／送信なし。正式公開準備として既存の共通GA4／Clarityを導入し、通信は承認済みの共通解析に限ります。スコア、回数、制限時間、設定、広告・外部リンク・購入・共通ホームは子どもの画面に追加していません。
 
 ## 公開範囲
 
-GitHub Pages試作直接URL：
+作業ブランチ：`prep/app013-production-20261102`。mainへの公開用変更のpush／merge、ConoHaのworkflow実行・FTP操作は行っていません。
+
+正式公開予定URL（本番未反映）：
+<https://yulab-web.com/apps/apps/APP-013-shape-match/>
+
+現行mainのGitHub Pages試作URL（このPRの公開準備変更は未反映）：
 <https://yuy080622-source.github.io/toddler-web-apps/apps/APP-013-shape-match/>
 
-正式公開はiPhone実機でのPM確認後に別判断します。技術検証のPASSはPMによるデザイン最終承認を意味しません。個別正本は今回変更していません。
+デザイン・実機操作は承認済みです。公開実行の承認は別です。[配信構成・事前検証・公開後確認手順](../../docs/APP-013-release-preflight.md)をPRでレビューし、PM承認後にmainへマージしてください。個別正本は変更していません。
+
+## 共通解析の読み込み
+
+`../../shared/ga4.js`と`../../shared/clarity.js`を同一URLのmoduleとして1回ずつ読み込みます。ブラウザのmodule mapが再挿入・再import時の二重実行を防ぎ、共通ファイル自体は変更しません。既存と同じGA4 `G-M5FPMG34LE`、Clarity `y7wygqymd5`を使用し、独自イベント・タッチ情報・ユーザーIDは追加しません。解析が遮断されてもゲームは動作します。
 
 ## 検証方法
 
@@ -73,7 +82,16 @@ NODE_PATH=/tmp/shape-match-tools/node_modules APP013_LONG_SECONDS=180 \
 
 Playwrightは検証時だけ使用し、アプリの依存には含めません。CHROMIUM_PATH、APP013_BASE_URL、APP013_ARTIFACT_DIRでブラウザ・検証先・保存先を指定できます。通常／キラキラ／動物動作は5種×3サイズの45枚、reduced-motionは5枚を生成します。実描画の吸着時間・連続座標を検証用RAFで測定し、アプリ本体のRAFやタイマーには追加しません。
 
+本番向けパス・配信ファイル・解析重複・遮断時の検証は、[公開準備手順](../../docs/APP-013-release-preflight.md)に従い、workflowの配信準備ステップだけで生成したローカルパッケージへ実施します。実際の解析SDK応答はスタブ化し、本番計測へテストデータを送りません。
+
 ## 確認結果
+
+### 2026-11-02 正式公開準備・事前検証（本番未反映）
+
+- 開始origin/main：`cdfb05b329693ea0850a25de42363d8edfc39708`。PM iPhone最終PASSを確認し、作業ブランチで準備。配信allowlistはAPP-013の3ファイルだけ追加し、29ファイルをローカル生成。既存24資産とAPP-013のCSS／JS・bodyは変更なし。
+- 6カード・旧5カード維持、本番と同じ二重appsパス、全5動物×3サイズ、吸着・光・動作・循環、連打・複数指・回転・中断・実BFCache・reduced-motionをPASS。解析ローダー／SDKの各遮断時も全5ステージをPASS。
+- 共有moduleの3回再挿入・再import、復帰・操作後もローダー／SDK各1、GA4 config 1。既存公開5アプリ×3サイズ、APP-010／011 Node回帰、APP-013 Node300ステージ、JS構文をPASS。実SDKの受信確認は公開後ゲートです。
+- 実時間180.1秒／58ステージ、検証時DOM118固定・光の発火58回・アプリタイマー最大1本／待機時0本、演出残留・不要スクロール・正常時console error／warningなし。全19 JS構文・git diffチェックもPASS。PR・公開手順は公開準備資料に記録し、ConoHa本番デプロイは未実行です。
 
 ### 2026-10-28 第2ステージをぶたへ変更
 
