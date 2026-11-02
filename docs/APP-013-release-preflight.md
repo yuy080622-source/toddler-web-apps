@@ -7,6 +7,7 @@
 - PMのiPhone実機5項目・デザイン・操作性は2026-11-02に最終PASS。
 - 作業開始main：`cdfb05b329693ea0850a25de42363d8edfc39708`。
 - 作業ブランチ：`prep/app013-production-20261102`。公開用差分はPRでレビューする。
+- Draft PR：[#1 APP-013 正式公開準備・事前検証](https://github.com/yuy080622-source/toddler-web-apps/pull/1)。公開実行承認待ちとしてDraftを維持する。
 - **本番未反映・公開実行承認待ち**。mainへのpush／merge、ConoHa workflow_dispatch、FTP接続・アップロードを実行していない。GitHub Pagesも現行mainを維持する。
 - 正式公開予定：<https://yulab-web.com/apps/apps/APP-013-shape-match/>。
 - ポータル：<https://yulab-web.com/apps/>。
@@ -24,6 +25,8 @@
 ## 検証の再現方法
 
 検証用のPyYAMLとPlaywright、Chromiumを使用する。アプリの実行依存には追加しない。以下の出力先は未使用ディレクトリを指定する。
+
+PyYAML未導入の検証環境では`python3 -m pip install --target /tmp/app013-python PyYAML`で導入し、Pythonコマンドに`PYTHONPATH=/tmp/app013-python`を付ける。
 
 ```bash
 node apps/APP-013-shape-match/tests/app.test.js

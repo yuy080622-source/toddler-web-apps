@@ -8,6 +8,7 @@
 
 - 開始origin/main：`cdfb05b329693ea0850a25de42363d8edfc39708`。AGENTS・個別正本・共通仕様／設計・handoff／changelogを確認。PM iPhone5項目とデザイン・操作性は最終承認済み。本番の公開実行承認とは区別する
 - 作業ブランチ：`prep/app013-production-20261102`。公開用変更はmainへpush／mergeしない。ConoHa workflowはpush main限定＋手動実行であることを確認し、workflow_dispatch・FTPを実行していない
+- Draft PR：[APP-013 正式公開準備・事前検証 #1](https://github.com/yuy080622-source/toddler-web-apps/pull/1)。変更と結果をレビュー可能。公開実行承認待ちでDraftを維持し、マージしていない
 - 公開用差分はallowlistへAPP-013の3ファイル追加、ポータルの6枚目カード、一覧JSのキャッシュ版更新、APP-013の既存GA4／Clarity導入。共通ファイル・既存公開アプリ・APP-013のbody／JS／CSSは変更なし。APP-010テストはカード数の期待値だけ6へ更新
 - APP-013の解析ローダーは同一URLのmoduleで各1回。共有Clarity自体にguardを追加せず、他アプリの挙動を維持。重複再挿入・再import・中断復帰・操作後もローダー／SDK各1、GA4 config 1。SDK／ローダー遮断時も全5動物を操作可
 - workflowのビルドステップだけを隔離コピーで実行し、29ファイルの許可リスト完全一致・旧24資産同一・欠落時拒否・開発ファイル除外・相対パスをPASS。本番と同じ`/apps/apps/APP-013-shape-match/`をローカル再現。共有JSの本番MIME・内容は読み取りのみで確認済み

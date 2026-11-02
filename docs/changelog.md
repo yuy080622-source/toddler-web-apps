@@ -7,6 +7,7 @@
 - 配信パッケージ29ファイル・旧24資産同一・不要ファイル除外・欠落検出・パス、解析再挿入／再import重複防止・遮断時、3サイズ全5動物、操作・ライフサイクル、旧5カードと公開済み5アプリの回帰をPASS。実SDK応答はスタブ化し本番計測へ送信なし
 - 実時間180.1秒／58ステージ、検証時DOM118固定・光58回・アプリタイマー最大1本／待機時0本、演出残留・不要スクロール・正常時console error／warningなし。全19 JS構文・git diffチェックもPASS
 - README／APP CHANGELOG／handoffと公開準備資料に結果・残課題・公開手順を記録。mainへの公開用変更のpush／merge、workflow_dispatch、FTP、本番デプロイは未実行。PM公開実行承認待ち
+- Draft PRを作成：<https://github.com/yuy080622-source/toddler-web-apps/pull/1>。公開実行承認待ちでDraftを維持
 
 ## 2026-11-02 — APP-013 PM iPhone実機最終PASS・公開準備へ
 

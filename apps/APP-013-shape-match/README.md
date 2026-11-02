@@ -55,6 +55,8 @@
 
 作業ブランチ：`prep/app013-production-20261102`。mainへの公開用変更のpush／merge、ConoHaのworkflow実行・FTP操作は行っていません。
 
+レビュー用Draft PR：<https://github.com/yuy080622-source/toddler-web-apps/pull/1>。
+
 正式公開予定URL（本番未反映）：
 <https://yulab-web.com/apps/apps/APP-013-shape-match/>
 
