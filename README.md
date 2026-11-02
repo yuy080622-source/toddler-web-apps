@@ -15,6 +15,7 @@ GitHub Repositoryをコード、仕様、設計、変更履歴、引き継ぎ情
 | APP-006 | カラフル花火 | `apps/APP-006-colorful-fireworks/` | Codex公開前検証PASS・実機確認待ち |
 | APP-007 | どうぶつをタッチ！ | `apps/APP-007-animal-touch/` | 実装済み・実機テスト待ち |
 | APP-008 | いないいないばあ！ | `apps/APP-008-peekaboo/` | 実装済み・実機テスト待ち |
+| APP-013 | かたちポン！ | `apps/APP-013-shape-match/` | iPhone実機最終PASS・公開準備PR／本番未反映 |
 
 ## 共通資料
 
@@ -23,6 +24,7 @@ GitHub Repositoryをコード、仕様、設計、変更履歴、引き継ぎ情
 - [共通設計](docs/design.md)
 - [引き継ぎ](docs/handoff.md)
 - [変更履歴](docs/changelog.md)
+- [APP-013 公開準備・事前検証・公開手順](docs/APP-013-release-preflight.md)
 
 ## 公開URL
 

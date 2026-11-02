@@ -1,5 +1,14 @@
 # PRJ-003 変更履歴
 
+## 2026-11-02 — APP-013 正式公開準備をブランチ／PRで実装・事前検証
+
+- 最新origin/main `cdfb05b329693ea0850a25de42363d8edfc39708`から`prep/app013-production-20261102`を作成。PMのiPhone実機・デザイン最終PASSを確認し、本番公開実行の承認は別扱い
+- ConoHa明示的allowlistへAPP-013の3資産、ポータル6枚目カード、一覧JSのキャッシュ版、既存GA4／Clarityのmodule導入を準備。共通ファイルと既存公開アプリのランタイム、APP-013のbody／JS／CSSは維持
+- 配信パッケージ29ファイル・旧24資産同一・不要ファイル除外・欠落検出・パス、解析再挿入／再import重複防止・遮断時、3サイズ全5動物、操作・ライフサイクル、旧5カードと公開済み5アプリの回帰をPASS。実SDK応答はスタブ化し本番計測へ送信なし
+- 実時間180.1秒／58ステージ、検証時DOM118固定・光58回・アプリタイマー最大1本／待機時0本、演出残留・不要スクロール・正常時console error／warningなし。全19 JS構文・git diffチェックもPASS
+- README／APP CHANGELOG／handoffと公開準備資料に結果・残課題・公開手順を記録。mainへの公開用変更のpush／merge、workflow_dispatch、FTP、本番デプロイは未実行。PM公開実行承認待ち
+- Draft PRを作成：<https://github.com/yuy080622-source/toddler-web-apps/pull/1>。公開実行承認待ちでDraftを維持
+
 ## 2026-11-02 — APP-013 PM iPhone実機最終PASS・公開準備へ
 
 - PMがぶたの見た目・胴体・操作・完成演出・他4匹・回転・複数指の5項目すべてをiPhone実機でPASS。技術PASSとデザインPASSが揃った。

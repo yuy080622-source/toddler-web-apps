@@ -12,6 +12,10 @@ const animals = ["turtle", "pig", "chick", "fox", "fish"];
 const animalNames = ["かめ", "ぶた", "ひよこ", "きつね", "さかな"];
 const shapes = ["circle", "rectangle", "egg", "triangle", "diamond"];
 const animationPart = [".turtle-head", ".pig-tail", "#target > svg", ".fox-ear-left", ".fish-tail"];
+const analyticsSDKs = new Set([
+  "https://www.googletagmanager.com/gtag/js?id=G-M5FPMG34LE",
+  "https://www.clarity.ms/tag/y7wygqymd5"
+]);
 
 async function inspect(page) {
   return page.evaluate(() => ({
@@ -145,6 +149,14 @@ async function checkPigDesign(page, completed = false) {
   const browser = await chromium.launch(launch);
   try {
     const context = await browser.newContext({ hasTouch: true });
+    // Run the real shared loaders; stub only third-party SDK responses so tests
+    // never send production analytics. Unexpected external traffic still fails.
+    await context.route("**/*", (route) => {
+      const url = route.request().url();
+      if (analyticsSDKs.has(url)) return route.fulfill({ status: 200, contentType: "application/javascript", body: "" });
+      if (new URL(url).origin === new URL(base).origin) return route.continue();
+      return route.abort("blockedbyclient");
+    });
     await context.addInitScript(() => {
       const state = { timers: new Set(), maxTimers: 0, lifecycle: [], lastPointerId: null, sparkleStarts: 0, snapTraces: [] };
       window.__verification = state;
@@ -504,9 +516,17 @@ async function checkPigDesign(page, completed = false) {
       console.log("PASS real-time long run: " + longRun.seconds + "s / " + stages + " stages, DOM " + longRun.dom + ", max timer 1");
     }
     assert.deepEqual(errors, [], "no console errors or warnings");
-    assert.ok(requests.every((url) => url.startsWith(new URL(base).origin)), "no external requests");
-    fs.writeFileSync(output + "/browser-results.json", JSON.stringify({ base, sizes, pigDesigns, snapTimings, longRun, errors, externalRequests: [], bfcache: true }, null, 2));
-    console.log("APP-013 browser regression: PASS; no external requests, console errors or warnings");
+    const externalRequests = [...new Set(requests.filter((url) => !url.startsWith(new URL(base).origin)))];
+    assert.ok(externalRequests.every((url) => analyticsSDKs.has(url)), "only approved analytics SDK requests");
+    const analyticsInitialization = await page.evaluate(() => ({
+      commands: window.dataLayer.map((args) => args[0]),
+      configs: window.dataLayer.filter((args) => args[0] === "config").map((args) => args[1]),
+      clarityTags: [...document.scripts].filter((s) => s.src === "https://www.clarity.ms/tag/y7wygqymd5").length
+    }));
+    assert.deepEqual(analyticsInitialization, { commands: ["js", "config"], configs: ["G-M5FPMG34LE"], clarityTags: 1 });
+    fs.writeFileSync(output + "/browser-results.json", JSON.stringify({ base, sizes, pigDesigns, snapTimings, longRun, errors,
+      externalRequests, analyticsInitialization, analyticsResponses: "test-only SDK stubs", bfcache: true }, null, 2));
+    console.log("APP-013 browser regression: PASS; only approved analytics SDKs (stubbed), no console errors or warnings");
   } finally {
     await browser.close();
   }

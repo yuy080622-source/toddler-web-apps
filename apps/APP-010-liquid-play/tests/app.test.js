@@ -42,7 +42,7 @@ assert.ok(indexSource.includes('href="styles.css?v=20260905-home"'), "APP-010 ca
 assert.match(styleSource, /#play-area\s*>\s*\.portal-home-button\s*\{[^}]*position:\s*absolute;/s, "APP-specific home positioning outranks the later shared relative positioning");
 assert.ok(appSource.includes('closest?.("[data-portal-home]")'), "APP-010 defensively excludes home-button pointers from jelly input");
 assert.ok(!/gtag\(|clarity\(|dataLayer|deviceorientation.*(?:gtag|clarity)|(?:gtag|clarity).*deviceorientation/.test(appSource), "APP-010 sends no custom analytics or sensor values");
-assert.equal((portalAppsSource.match(/\{ name:/g) || []).length, 5, "portal lists five public apps");
+assert.equal((portalAppsSource.match(/\{ name:/g) || []).length, 6, "portal lists six public apps including APP-013");
 assert.ok(portalAppsSource.includes('name: "ぷにぷにジェリー"') && portalAppsSource.includes('href: "apps/APP-010-liquid-play/"'), "portal links the public APP-010 name and existing URL");
 assert.ok(portalStyleSource.includes(".app-card--jelly .app-icon"), "portal includes the gentle APP-010 card background");
 
